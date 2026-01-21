@@ -519,6 +519,30 @@
             const whrLevel = calculateWHRLevel(dailyData.whr, userInfo.gender);
             const visceralFatLevel = calculateVisceralFatLevel(dailyData.visceralFat);
 
+            // 定义等级颜色映射
+            const levelColors = {
+                // BMI等级
+                '偏瘦': '#f39c12', // 黄色
+                '正常': '#27ae60', // 绿色
+                '超重': '#f39c12', // 黄色
+                '肥胖': '#e74c3c', // 红色
+                
+                // 血压等级
+                '正常': '#27ae60', // 绿色
+                '高血压前期': '#f39c12', // 黄色
+                '高血压1级': '#e74c3c', // 红色
+                '高血压2级': '#c0392b', // 深红色
+                
+                // 腰臀比等级
+                '正常': '#27ae60', // 绿色
+                '中心性肥胖': '#e74c3c', // 红色
+                
+                // 内脏脂肪等级
+                '正常': '#27ae60', // 绿色
+                '偏高': '#f39c12', // 黄色
+                '肥胖': '#e74c3c' // 红色
+            };
+            
             // 准备所有指标，用“-”占位
             const allMetrics = [
                 // 基础指标
@@ -546,10 +570,10 @@
                 { label: '脂肪重量', value: fatMass ? `${fatMass} 斤` : '-' },
                 { label: '肌肉率', value: muscleRate ? `${muscleRate}%` : '-' },
                 { label: '理想体重', value: idealWeight ? `${idealWeight} 斤` : '-' },
-                { label: 'BMI等级', value: bmiLevel && bmiLevel !== 'N/A' ? bmiLevel : '-' },
-                { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-' },
-                { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-' },
-                { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-' }
+                { label: 'BMI等级', value: bmiLevel && bmiLevel !== 'N/A' ? bmiLevel : '-', isLevel: true },
+                { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-', isLevel: true },
+                { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-', isLevel: true },
+                { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-', isLevel: true }
             ];
 
             // 更新模态框标题
@@ -560,11 +584,17 @@
             let metricsHTML = '<div class="metrics-grid">';
             
             allMetrics.forEach(metric => {
+                // 根据是否为等级指标和等级值获取颜色
+                let valueColor = '#2c3e50'; // 默认颜色
+                if (metric.isLevel && metric.value !== '-') {
+                    valueColor = levelColors[metric.value] || '#2c3e50';
+                }
+                
                 metricsHTML += `
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <span style="font-size: 14px; color: #7f8c8d;">${metric.label}</span>
-                            <span style="font-size: 18px; font-weight: 700; color: #2c3e50;">${metric.value}</span>
+                            <span style="font-size: 18px; font-weight: 700; color: ${valueColor};">${metric.value}</span>
                         </div>
                     </div>
                 `;
