@@ -381,7 +381,39 @@
 
             userInfo = { height, age, gender, activityLevel };
             localStorage.setItem(USER_INFO_KEY, JSON.stringify(userInfo));
-            alert('基础信息保存成功');
+            
+            // 重新计算所有数据的衍生指标
+            recalculateAllDerivedMetrics();
+            
+            // 更新图表和指标
+            updateChart();
+            updateMetrics();
+            updateHealthSummary();
+            
+            alert('基础信息保存成功，所有衍生指标已重新计算');
+        }
+        
+        // 重新计算所有数据的衍生指标
+        function recalculateAllDerivedMetrics() {
+            // 遍历所有数据点，重新计算衍生指标
+            rawData = rawData.map(item => {
+                const enhancedItem = { ...item };
+                
+                // 重新计算所有衍生指标
+                enhancedItem.bmi = calculateBMI(enhancedItem.weight, userInfo.height);
+                enhancedItem.bmr = calculateBMR(enhancedItem.weight, userInfo.height, userInfo.age, userInfo.gender);
+                enhancedItem.bmr = enhancedItem.bmr ? Math.round(enhancedItem.bmr) : null;
+                enhancedItem.whr = calculateWHR(enhancedItem.waist, enhancedItem.hip);
+                enhancedItem.muscleRate = calculateMuscleRate(enhancedItem.muscleMass, enhancedItem.weight);
+                enhancedItem.leanBodyMass = calculateLeanBodyMass(enhancedItem.weight, enhancedItem.fatRate);
+                enhancedItem.fatMass = calculateFatMass(enhancedItem.weight, enhancedItem.fatRate);
+                enhancedItem.tdee = calculateTDEE(enhancedItem.bmr, userInfo.activityLevel);
+                
+                return enhancedItem;
+            });
+            
+            // 保存更新后的数据到localStorage
+            saveData();
         }
 
         // 计算BMI
@@ -630,12 +662,16 @@
                 return;
             }
 
-            // 自动计算衍生指标
+            // 自动计算所有衍生指标
             const bmi = calculateBMI(weight, userInfo.height);
             const bmr = calculateBMR(weight, userInfo.height, userInfo.age, userInfo.gender);
             const whr = calculateWHR(waist, hip);
+            const muscleRate = calculateMuscleRate(muscleMass, weight);
+            const leanBodyMass = calculateLeanBodyMass(weight, fatRate);
+            const fatMass = calculateFatMass(weight, fatRate);
+            const tdee = calculateTDEE(bmr, userInfo.activityLevel);
 
-            // 创建数据对象
+            // 创建数据对象，包含所有指标（基础指标和衍生指标）
             const dataItem = {
                 date,
                 weight,
@@ -649,9 +685,14 @@
                 systolic,
                 diastolic,
                 heartRate,
+                // 保存计算出来的衍生指标
                 bmi,
                 bmr: bmr ? Math.round(bmr) : null,
-                whr
+                whr,
+                muscleRate,
+                leanBodyMass,
+                fatMass,
+                tdee
             };
 
             // 检查是否已存在该日期的数据
@@ -666,7 +707,7 @@
                 rawData.sort((a, b) => new Date(a.date) - new Date(b.date));
             }
 
-            // 保存数据
+            // 保存数据到localStorage
             saveData();
             // 更新图表
             updateChart();
@@ -759,10 +800,49 @@
             // 准备图表数据
             const dates = rawData.map(item => item.date);
             
+            // 动态计算缺失的指标数据
+            const enhancedData = rawData.map(item => {
+                // 创建一个新对象，避免修改原始数据
+                const enhancedItem = { ...item };
+                
+                // 计算BMI（如果缺失）
+                if (!enhancedItem.bmi && userInfo.height) {
+                    enhancedItem.bmi = calculateBMI(enhancedItem.weight, userInfo.height);
+                }
+                
+                // 计算BMR（如果缺失）
+                if (!enhancedItem.bmr && userInfo.height && userInfo.age && userInfo.gender) {
+                    enhancedItem.bmr = calculateBMR(enhancedItem.weight, userInfo.height, userInfo.age, userInfo.gender);
+                    enhancedItem.bmr = enhancedItem.bmr ? Math.round(enhancedItem.bmr) : null;
+                }
+                
+                // 计算TDEE（如果缺失）
+                if (!enhancedItem.tdee && enhancedItem.bmr && userInfo.activityLevel) {
+                    enhancedItem.tdee = calculateTDEE(enhancedItem.bmr, userInfo.activityLevel);
+                }
+                
+                // 计算腰臀比（如果缺失）
+                if (!enhancedItem.whr && enhancedItem.waist && enhancedItem.hip) {
+                    enhancedItem.whr = calculateWHR(enhancedItem.waist, enhancedItem.hip);
+                }
+                
+                // 计算肌肉率（如果缺失）
+                if (!enhancedItem.muscleRate && enhancedItem.muscleMass && enhancedItem.weight) {
+                    enhancedItem.muscleRate = calculateMuscleRate(enhancedItem.muscleMass, enhancedItem.weight);
+                }
+                
+                // 计算瘦体重（如果缺失）
+                if (!enhancedItem.leanBodyMass && enhancedItem.weight && enhancedItem.fatRate) {
+                    enhancedItem.leanBodyMass = calculateLeanBodyMass(enhancedItem.weight, enhancedItem.fatRate);
+                }
+                
+                return enhancedItem;
+            });
+            
             // 生成系列数据
             const series = currentMetrics.map(metricKey => {
                 const metric = chartMetrics.find(m => m.key === metricKey);
-                const data = rawData.map(item => item[metricKey] || null);
+                const data = enhancedData.map(item => item[metricKey] || null);
                 return {
                     name: metric.name,
                     type: 'line',
@@ -801,15 +881,15 @@
                 };
             });
 
-            // 计算Y轴范围
-            const yAxis0Data = rawData.map(item => {
+            // 计算Y轴范围 - 使用增强后的数据
+            const yAxis0Data = enhancedData.map(item => {
                 return currentMetrics
                     .filter(key => chartMetrics.find(m => m.key === key).yAxisIndex === 0)
                     .map(key => item[key])
                     .filter(val => val !== null);
             }).flat();
 
-            const yAxis1Data = rawData.map(item => {
+            const yAxis1Data = enhancedData.map(item => {
                 return currentMetrics
                     .filter(key => chartMetrics.find(m => m.key === key).yAxisIndex === 1)
                     .map(key => item[key])
