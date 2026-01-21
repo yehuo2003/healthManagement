@@ -321,6 +321,183 @@
             return (waist / hip).toFixed(2);
         }
 
+        // 计算瘦体重（去脂体重）
+        function calculateLeanBodyMass(weight, fatRate) {
+            if (!weight || !fatRate) return null;
+            return (weight * (1 - fatRate / 100)).toFixed(1);
+        }
+
+        // 计算脂肪重量
+        function calculateFatMass(weight, fatRate) {
+            if (!weight || !fatRate) return null;
+            return (weight * (fatRate / 100)).toFixed(1);
+        }
+
+        // 计算肌肉率
+        function calculateMuscleRate(muscleMass, weight) {
+            if (!muscleMass || !weight) return null;
+            return ((muscleMass * 2 / weight) * 100).toFixed(1); // 转换为斤计算
+        }
+
+        // 计算理想体重
+        function calculateIdealWeight(height, gender) {
+            if (!height || !gender) return null;
+            let idealWeightKg;
+            if (gender === 'male') {
+                idealWeightKg = (height - 80) * 0.7;
+            } else {
+                idealWeightKg = (height - 70) * 0.6;
+            }
+            return (idealWeightKg * 2).toFixed(1); // 转换为斤
+        }
+
+        // 计算血压风险等级
+        function calculateBloodPressureLevel(systolic, diastolic) {
+            if (!systolic || !diastolic) return 'N/A';
+            if (systolic < 120 && diastolic < 80) return '正常';
+            if (systolic >= 120 && systolic <= 139 || diastolic >= 80 && diastolic <= 89) return '高血压前期';
+            if (systolic >= 140 && systolic <= 159 || diastolic >= 90 && diastolic <= 99) return '高血压1级';
+            return '高血压2级';
+        }
+
+        // 计算BMI风险等级
+        function calculateBMILevel(bmi) {
+            if (!bmi) return 'N/A';
+            const bmiNum = parseFloat(bmi);
+            if (bmiNum < 18.5) return '偏瘦';
+            if (bmiNum >= 18.5 && bmiNum <= 23.9) return '正常';
+            if (bmiNum >= 24.0 && bmiNum <= 27.9) return '超重';
+            return '肥胖';
+        }
+
+        // 计算腰臀比风险等级
+        function calculateWHRLevel(whr, gender) {
+            if (!whr || !gender) return 'N/A';
+            const whrNum = parseFloat(whr);
+            if (gender === 'male' && whrNum < 0.90 || gender === 'female' && whrNum < 0.85) return '正常';
+            return '中心性肥胖';
+        }
+
+        // 计算内脏脂肪风险等级
+        function calculateVisceralFatLevel(visceralFat) {
+            if (!visceralFat) return 'N/A';
+            if (visceralFat < 10) return '正常';
+            if (visceralFat >= 10 && visceralFat <= 14) return '偏高';
+            return '肥胖';
+        }
+
+        // 显示当日指标
+        function showDailyMetrics(date) {
+            console.log('showDailyMetrics called with date:', date);
+            
+            // 查找当日数据
+            const dailyData = rawData.find(item => item.date === date);
+            if (!dailyData) {
+                console.log('No data found for date:', date);
+                return;
+            }
+
+            // 手动计算BMI（因为原始数据中可能没有）
+            let bmi = dailyData.bmi;
+            if (!bmi && userInfo.height) {
+                bmi = calculateBMI(dailyData.weight, userInfo.height);
+            }
+
+            // 手动计算BMR（因为原始数据中可能没有）
+            let bmr = dailyData.bmr;
+            if (!bmr && userInfo.height && userInfo.age && userInfo.gender) {
+                bmr = calculateBMR(dailyData.weight, userInfo.height, userInfo.age, userInfo.gender);
+                bmr = bmr ? Math.round(bmr) : null;
+            }
+
+            // 计算衍生指标
+            const leanBodyMass = calculateLeanBodyMass(dailyData.weight, dailyData.fatRate);
+            const fatMass = calculateFatMass(dailyData.weight, dailyData.fatRate);
+            const muscleRate = calculateMuscleRate(dailyData.muscleMass, dailyData.weight);
+            const idealWeight = calculateIdealWeight(userInfo.height, userInfo.gender);
+            const bloodPressureLevel = calculateBloodPressureLevel(dailyData.systolic, dailyData.diastolic);
+            const bmiLevel = calculateBMILevel(bmi);
+            const whrLevel = calculateWHRLevel(dailyData.whr, userInfo.gender);
+            const visceralFatLevel = calculateVisceralFatLevel(dailyData.visceralFat);
+
+            // 准备所有指标，用“-”占位
+            const allMetrics = [
+                // 基础指标
+                { label: '日期', value: date },
+                { label: '体重', value: dailyData.weight ? `${dailyData.weight} 斤` : '-' },
+                { label: '体脂率', value: dailyData.fatRate ? `${dailyData.fatRate}%` : '-' },
+                { label: '肌肉量', value: dailyData.muscleMass !== undefined && dailyData.muscleMass !== null ? `${dailyData.muscleMass} kg` : '-' },
+                { label: '水分率', value: dailyData.waterRate !== undefined && dailyData.waterRate !== null ? `${dailyData.waterRate}%` : '-' },
+                { label: '骨量', value: dailyData.boneMass !== undefined && dailyData.boneMass !== null ? `${dailyData.boneMass} kg` : '-' },
+                { label: '内脏脂肪', value: dailyData.visceralFat !== undefined && dailyData.visceralFat !== null ? dailyData.visceralFat : '-' },
+                { label: '腰围', value: dailyData.waist !== undefined && dailyData.waist !== null ? `${dailyData.waist} cm` : '-' },
+                { label: '臀围', value: dailyData.hip !== undefined && dailyData.hip !== null ? `${dailyData.hip} cm` : '-' },
+                { label: '收缩压', value: dailyData.systolic !== undefined && dailyData.systolic !== null ? `${dailyData.systolic} mmHg` : '-' },
+                { label: '舒张压', value: dailyData.diastolic !== undefined && dailyData.diastolic !== null ? `${dailyData.diastolic} mmHg` : '-' },
+                { label: '静息心率', value: dailyData.heartRate !== undefined && dailyData.heartRate !== null ? `${dailyData.heartRate} 次/分` : '-' },
+                
+                // 自动计算指标
+                { label: 'BMI', value: bmi ? bmi : '-' },
+                { label: '基础代谢率', value: bmr ? `${bmr} 大卡` : '-' },
+                { label: '腰臀比', value: dailyData.whr !== undefined && dailyData.whr !== null ? dailyData.whr : '-' },
+                
+                // 衍生指标
+                { label: '瘦体重', value: leanBodyMass ? `${leanBodyMass} 斤` : '-' },
+                { label: '脂肪重量', value: fatMass ? `${fatMass} 斤` : '-' },
+                { label: '肌肉率', value: muscleRate ? `${muscleRate}%` : '-' },
+                { label: '理想体重', value: idealWeight ? `${idealWeight} 斤` : '-' },
+                { label: 'BMI等级', value: bmiLevel && bmiLevel !== 'N/A' ? bmiLevel : '-' },
+                { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-' },
+                { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-' },
+                { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-' }
+            ];
+
+            // 创建或获取指标容器 - 改进版本
+            let metricsContainer = document.querySelector('.daily-metrics');
+            if (!metricsContainer) {
+                console.log('Creating new metrics container...');
+                // 创建指标容器
+                metricsContainer = document.createElement('div');
+                metricsContainer.className = 'summary daily-metrics';
+                
+                // 插入到DOM的可见位置 - 直接添加到body末尾
+                document.body.appendChild(metricsContainer);
+                console.log('Created and added metrics container to body:', metricsContainer);
+            }
+
+            // 更新内容
+            metricsContainer.innerHTML = `<h3>${date} 健康数据</h3>`;
+            
+            // 生成指标卡片 - 显示所有指标，用“-”占位
+            const metricsGrid = document.createElement('div');
+            metricsGrid.className = 'metrics-grid';
+            metricsGrid.style.display = 'grid';
+            metricsGrid.style.gridTemplateColumns = 'repeat(auto-fit, minmax(250px, 1fr))';
+            metricsGrid.style.gap = '15px';
+            metricsGrid.style.marginTop = '20px';
+            
+            // 生成指标项
+            allMetrics.forEach(metric => {
+                const metricItem = document.createElement('div');
+                metricItem.style.background = 'white';
+                metricItem.style.borderRadius = '8px';
+                metricItem.style.padding = '15px';
+                metricItem.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
+                
+                metricItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 14px; color: #7f8c8d;">${metric.label}</span>
+                        <span style="font-size: 18px; font-weight: 700; color: #2c3e50;">${metric.value}</span>
+                    </div>
+                `;
+                
+                metricsGrid.appendChild(metricItem);
+            });
+            
+            metricsContainer.appendChild(metricsGrid);
+            console.log('Updated metrics container with', allMetrics.length, 'metrics');
+        }
+
         // 添加数据
         function addData() {
             const date = document.getElementById('inputDate').value;
@@ -485,7 +662,11 @@
                         color: metric.color
                     },
                     itemStyle: {
-                        color: metric.color
+                        color: metric.color,
+                        // 确保点可以被点击
+                        emphasis: {
+                            focus: 'series'
+                        }
                     },
                     areaStyle: metric.yAxisIndex === 0 ? {
                         color: {
@@ -502,7 +683,9 @@
                                 color: `${metric.color}20`
                             }]
                         }
-                    } : undefined
+                    } : undefined,
+                    // 确保系列可以点击
+                    clickable: true
                 };
             });
 
@@ -593,12 +776,108 @@
                         end: 100
                     }
                 ],
-                series: series
+                series: series,
+                // 添加点击事件配置
+                emphasis: {
+                    focus: 'series'
+                }
             };
 
             // 渲染图表
             option && myChart.setOption(option);
+            
+            // 重新添加图表点击事件，确保图表更新后事件仍然有效
+            addChartClickEvent();
         }
+
+        // 添加图表点击事件 - 在图表初始化后添加
+        function addChartClickEvent() {
+            console.log('Adding chart click event...');
+            // 移除之前的所有事件监听，确保没有冲突
+            myChart.off('click');
+            
+            // 添加ECharts原生点击事件
+            myChart.on('click', function(params) {
+                console.log('ECharts click event triggered!', params);
+                
+                // 确保params有name属性
+                if (params && params.name) {
+                    const date = params.name;
+                    console.log('Selected date from ECharts event:', date);
+                    showDailyMetrics(date);
+                } else {
+                    console.log('No date found in ECharts click params:', params);
+                }
+            });
+            
+            // 添加DOM点击事件作为备选方案
+            myChart.getDom().addEventListener('click', function(e) {
+                console.log('Chart DOM clicked!', e);
+                
+                // 使用ECharts API从点击位置获取数据
+                try {
+                    // 获取点击位置相对于图表容器的坐标
+                    const rect = myChart.getDom().getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    console.log('Calculated click position:', { x, y });
+                    
+                    // 使用ECharts的convertFromPixel方法获取数据坐标
+                    const pointInPixel = [x, y];
+                    const pointInGrid = myChart.convertFromPixel('grid', pointInPixel);
+                    
+                    console.log('Point in grid:', pointInGrid);
+                    
+                    // 获取对应的日期索引
+                    if (pointInGrid && pointInGrid[0] !== null && pointInGrid[0] !== undefined) {
+                        const dataIndex = Math.round(pointInGrid[0]);
+                        console.log('Data index:', dataIndex);
+                        
+                        // 确保索引在有效范围内
+                        if (dataIndex >= 0 && dataIndex < rawData.length) {
+                            const date = rawData[dataIndex].date;
+                            console.log('Selected date from DOM click:', date);
+                            showDailyMetrics(date);
+                        } else {
+                            console.log('Data index out of range:', dataIndex);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error getting data from DOM click:', error);
+                }
+            });
+            
+            console.log('Chart click event added.');
+        }
+
+        // 测试图表点击事件
+        function testChartClick() {
+            console.log('Testing chart click event...');
+            // 模拟点击事件
+            myChart.dispatchAction({
+                type: 'click',
+                seriesIndex: 0,
+                dataIndex: 0
+            });
+        }
+
+        // 初始化数据
+        async function init() {
+            await initData();
+            renderMetricSelector();
+            // 添加图表点击事件
+            addChartClickEvent();
+            // 测试图表点击事件 - 取消注释以测试
+            setTimeout(() => {
+                testChartClick();
+            }, 1000);
+            // 添加日期选择测试按钮
+            addDateTestButton();
+        }
+        
+        // 启动应用
+        init();
 
         // 指标选择器
         function renderMetricSelector() {
@@ -750,14 +1029,35 @@
             });
         });
 
-        // 初始化数据
-        async function init() {
-            await initData();
-            renderMetricSelector();
+        // 添加日期选择测试按钮
+        function addDateTestButton() {
+            const container = document.createElement('div');
+            container.className = 'summary';
+            container.innerHTML = `
+                <h3>测试日期选择</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="testDateSelect" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                        ${rawData.map(item => `<option value="${item.date}">${item.date}</option>`).join('')}
+                    </select>
+                    <button onclick="testDateSelection()" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">查看选中日期数据</button>
+                </div>
+            `;
+            
+            // 添加到DOM
+            document.body.appendChild(container);
         }
-        
-        // 启动应用
-        init();
+
+        // 测试日期选择
+        function testDateSelection() {
+            const select = document.getElementById('testDateSelect');
+            if (select && select.value) {
+                const date = select.value;
+                console.log('Testing date selection for:', date);
+                showDailyMetrics(date);
+            }
+        }
+
+
     </script>
 </body>
 </html>
