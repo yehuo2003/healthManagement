@@ -388,12 +388,9 @@
 
         // 显示当日指标
         function showDailyMetrics(date) {
-            console.log('showDailyMetrics called with date:', date);
-            
             // 查找当日数据
             const dailyData = rawData.find(item => item.date === date);
             if (!dailyData) {
-                console.log('No data found for date:', date);
                 return;
             }
 
@@ -452,17 +449,15 @@
                 { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-' }
             ];
 
-            // 创建或获取指标容器 - 改进版本
+            // 创建或获取指标容器
             let metricsContainer = document.querySelector('.daily-metrics');
             if (!metricsContainer) {
-                console.log('Creating new metrics container...');
                 // 创建指标容器
                 metricsContainer = document.createElement('div');
                 metricsContainer.className = 'summary daily-metrics';
                 
                 // 插入到DOM的可见位置 - 直接添加到body末尾
                 document.body.appendChild(metricsContainer);
-                console.log('Created and added metrics container to body:', metricsContainer);
             }
 
             // 更新内容
@@ -495,7 +490,6 @@
             });
             
             metricsContainer.appendChild(metricsGrid);
-            console.log('Updated metrics container with', allMetrics.length, 'metrics');
         }
 
         // 添加数据
@@ -792,28 +786,20 @@
 
         // 添加图表点击事件 - 在图表初始化后添加
         function addChartClickEvent() {
-            console.log('Adding chart click event...');
             // 移除之前的所有事件监听，确保没有冲突
             myChart.off('click');
             
             // 添加ECharts原生点击事件
             myChart.on('click', function(params) {
-                console.log('ECharts click event triggered!', params);
-                
                 // 确保params有name属性
                 if (params && params.name) {
                     const date = params.name;
-                    console.log('Selected date from ECharts event:', date);
                     showDailyMetrics(date);
-                } else {
-                    console.log('No date found in ECharts click params:', params);
                 }
             });
             
             // 添加DOM点击事件作为备选方案
             myChart.getDom().addEventListener('click', function(e) {
-                console.log('Chart DOM clicked!', e);
-                
                 // 使用ECharts API从点击位置获取数据
                 try {
                     // 获取点击位置相对于图表容器的坐标
@@ -821,44 +807,23 @@
                     const x = e.clientX - rect.left;
                     const y = e.clientY - rect.top;
                     
-                    console.log('Calculated click position:', { x, y });
-                    
                     // 使用ECharts的convertFromPixel方法获取数据坐标
                     const pointInPixel = [x, y];
                     const pointInGrid = myChart.convertFromPixel('grid', pointInPixel);
                     
-                    console.log('Point in grid:', pointInGrid);
-                    
                     // 获取对应的日期索引
                     if (pointInGrid && pointInGrid[0] !== null && pointInGrid[0] !== undefined) {
                         const dataIndex = Math.round(pointInGrid[0]);
-                        console.log('Data index:', dataIndex);
                         
                         // 确保索引在有效范围内
                         if (dataIndex >= 0 && dataIndex < rawData.length) {
                             const date = rawData[dataIndex].date;
-                            console.log('Selected date from DOM click:', date);
                             showDailyMetrics(date);
-                        } else {
-                            console.log('Data index out of range:', dataIndex);
                         }
                     }
                 } catch (error) {
-                    console.error('Error getting data from DOM click:', error);
+                    // 忽略错误，不影响用户体验
                 }
-            });
-            
-            console.log('Chart click event added.');
-        }
-
-        // 测试图表点击事件
-        function testChartClick() {
-            console.log('Testing chart click event...');
-            // 模拟点击事件
-            myChart.dispatchAction({
-                type: 'click',
-                seriesIndex: 0,
-                dataIndex: 0
             });
         }
 
@@ -868,12 +833,6 @@
             renderMetricSelector();
             // 添加图表点击事件
             addChartClickEvent();
-            // 测试图表点击事件 - 取消注释以测试
-            setTimeout(() => {
-                testChartClick();
-            }, 1000);
-            // 添加日期选择测试按钮
-            addDateTestButton();
         }
         
         // 启动应用
@@ -1028,34 +987,6 @@
                 });
             });
         });
-
-        // 添加日期选择测试按钮
-        function addDateTestButton() {
-            const container = document.createElement('div');
-            container.className = 'summary';
-            container.innerHTML = `
-                <h3>测试日期选择</h3>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <select id="testDateSelect" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                        ${rawData.map(item => `<option value="${item.date}">${item.date}</option>`).join('')}
-                    </select>
-                    <button onclick="testDateSelection()" style="padding: 8px 16px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer;">查看选中日期数据</button>
-                </div>
-            `;
-            
-            // 添加到DOM
-            document.body.appendChild(container);
-        }
-
-        // 测试日期选择
-        function testDateSelection() {
-            const select = document.getElementById('testDateSelect');
-            if (select && select.value) {
-                const date = select.value;
-                console.log('Testing date selection for:', date);
-                showDailyMetrics(date);
-            }
-        }
 
 
     </script>
