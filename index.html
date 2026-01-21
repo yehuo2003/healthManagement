@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>体重与体脂率变化趋势分析</title>
+    <title>健康管理</title>
     <script src="./echarts.js"></script>
     <style>
         body {
@@ -116,7 +116,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>体重与体脂率变化趋势分析</h1>
+        <h1>健康管理</h1>
         <div class="subtitle">2024年7月30日 - 2025年8月22日</div>
         
         <div class="metrics">
@@ -788,6 +788,7 @@
         function addChartClickEvent() {
             // 移除之前的所有事件监听，确保没有冲突
             myChart.off('click');
+            myChart.off('dataZoom');
             
             // 添加ECharts原生点击事件
             myChart.on('click', function(params) {
@@ -796,6 +797,12 @@
                     const date = params.name;
                     showDailyMetrics(date);
                 }
+            });
+            
+            // 添加dataZoom事件监听，当用户调整数据缩放时更新时间范围和指标
+            myChart.on('dataZoom', function(params) {
+                updateTimeRange();
+                updateMetrics();
             });
             
             // 添加DOM点击事件作为备选方案
@@ -876,37 +883,143 @@
             updateChart();
         }
 
+        // 更新时间范围
+        function updateTimeRange() {
+            if (rawData.length === 0) return;
+            
+            try {
+                // 获取当前图表的dataZoom配置
+                const option = myChart.getOption();
+                const dataZoom = option.dataZoom && option.dataZoom[0];
+                
+                let startIndex = 0;
+                let endIndex = rawData.length - 1;
+                
+                // 如果有dataZoom配置，计算当前显示的数据范围
+                if (dataZoom && dataZoom.start !== undefined && dataZoom.end !== undefined) {
+                    const startPercent = dataZoom.start / 100;
+                    const endPercent = dataZoom.end / 100;
+                    
+                    startIndex = Math.round(startPercent * (rawData.length - 1));
+                    endIndex = Math.round(endPercent * (rawData.length - 1));
+                }
+                
+                // 获取当前显示的数据范围
+                const firstData = rawData[startIndex];
+                const lastData = rawData[endIndex];
+                
+                // 格式化日期显示
+                const formatDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    return `${year}年${month}月${day}日`;
+                };
+                
+                // 更新副标题的时间范围
+                const subtitle = document.querySelector('.subtitle');
+                subtitle.textContent = `${formatDate(firstData.date)} - ${formatDate(lastData.date)}`;
+            } catch (error) {
+                // 如果获取图表配置失败，使用默认的整个数据集范围
+                const firstData = rawData[0];
+                const lastData = rawData[rawData.length - 1];
+                
+                const formatDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    const year = date.getFullYear();
+                    const month = date.getMonth() + 1;
+                    const day = date.getDate();
+                    return `${year}年${month}月${day}日`;
+                };
+                
+                const subtitle = document.querySelector('.subtitle');
+                subtitle.textContent = `${formatDate(firstData.date)} - ${formatDate(lastData.date)}`;
+            }
+        }
+
         // 更新指标
         function updateMetrics() {
             if (rawData.length === 0) return;
 
-            const firstData = rawData[0];
-            const lastData = rawData[rawData.length - 1];
+            // 获取当前显示的数据范围
+            let startIndex = 0;
+            let endIndex = rawData.length - 1;
+            
+            try {
+                // 获取当前图表的dataZoom配置，以确定当前显示的数据范围
+                const option = myChart.getOption();
+                const dataZoom = option.dataZoom && option.dataZoom[0];
+                
+                if (dataZoom && dataZoom.start !== undefined && dataZoom.end !== undefined) {
+                    const startPercent = dataZoom.start / 100;
+                    const endPercent = dataZoom.end / 100;
+                    
+                    startIndex = Math.round(startPercent * (rawData.length - 1));
+                    endIndex = Math.round(endPercent * (rawData.length - 1));
+                }
+            } catch (error) {
+                // 如果获取图表配置失败，使用默认的整个数据集范围
+            }
+            
+            const firstData = rawData[startIndex];
+            const lastData = rawData[endIndex];
+            
+            // 更新时间范围
+            updateTimeRange();
             
             // 计算变化值
             const weightChange = lastData.weight - firstData.weight;
             const fatRateChange = (lastData.fatRate && firstData.fatRate) ? (lastData.fatRate - firstData.fatRate) : null;
             const weightChangePercent = ((weightChange / firstData.weight) * 100).toFixed(1);
-            const muscleChange = (lastData.muscleMass && firstData.muscleMass) ? (lastData.muscleMass - firstData.muscleMass) : null;
-            const bmiChange = (lastData.bmi && firstData.bmi) ? (parseFloat(lastData.bmi) - parseFloat(firstData.bmi)).toFixed(1) : null;
+            
+            // 格式化日期
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${year}年${month}月${day}日`;
+            };
 
             // 更新基础指标卡片
-            document.querySelector('.metric-card:nth-child(1) .value').textContent = `${firstData.weight} 斤`;
-            document.querySelector('.metric-card:nth-child(1) .change').textContent = firstData.date;
-            document.querySelector('.metric-card:nth-child(2) .value').textContent = `${lastData.weight} 斤`;
-            document.querySelector('.metric-card:nth-child(2) .change').textContent = lastData.date;
-            document.querySelector('.metric-card:nth-child(3) .value').textContent = `${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)} 斤`;
-            document.querySelector('.metric-card:nth-child(3) .change').innerHTML = `${weightChange > 0 ? '↑' : '↓'} ${Math.abs(weightChangePercent)}%`;
-            document.querySelector('.metric-card:nth-child(3) .change').className = `change ${weightChange < 0 ? 'positive' : 'negative'}`;
-            document.querySelector('.metric-card:nth-child(4) .value').textContent = `${firstData.fatRate}% → ${lastData.fatRate}%`;
+            // 初始体重
+            const initialWeightCard = document.querySelector('.metric-card:nth-child(1)');
+            initialWeightCard.querySelector('.value').textContent = `${firstData.weight} 斤`;
+            initialWeightCard.querySelector('.change').textContent = formatDate(firstData.date);
             
-            // 检查是否有fatRateChange数据
+            // 当前体重
+            const currentWeightCard = document.querySelector('.metric-card:nth-child(2)');
+            currentWeightCard.querySelector('.value').textContent = `${lastData.weight} 斤`;
+            currentWeightCard.querySelector('.change').textContent = formatDate(lastData.date);
+            
+            // 体重变化
+            const weightChangeCard = document.querySelector('.metric-card:nth-child(3)');
+            const weightChangeValue = weightChange.toFixed(1);
+            weightChangeCard.querySelector('.value').textContent = `${weightChange > 0 ? '+' : ''}${weightChangeValue} 斤`;
+            
+            // 体重变化率和箭头方向
+            const weightChangePercentAbs = Math.abs(weightChangePercent);
+            const weightArrow = weightChange > 0 ? '↑' : '↓';
+            const weightChangeClass = weightChange < 0 ? 'positive' : 'negative';
+            weightChangeCard.querySelector('.change').innerHTML = `${weightArrow} ${weightChangePercentAbs}%`;
+            weightChangeCard.querySelector('.change').className = `change ${weightChangeClass}`;
+            
+            // 体脂率变化
+            const fatRateChangeCard = document.querySelector('.metric-card:nth-child(4)');
+            fatRateChangeCard.querySelector('.value').textContent = `${firstData.fatRate}% → ${lastData.fatRate}%`;
+            
             if (fatRateChange !== null) {
-                document.querySelector('.metric-card:nth-child(4) .change').innerHTML = `${fatRateChange > 0 ? '↑' : '↓'} ${Math.abs(fatRateChange).toFixed(1)}%`;
-                document.querySelector('.metric-card:nth-child(4) .change').className = `change ${fatRateChange < 0 ? 'positive' : 'negative'}`;
+                const fatRateChangeValue = fatRateChange.toFixed(1);
+                const fatRateChangePercent = ((fatRateChange / firstData.fatRate) * 100).toFixed(1);
+                const fatRateChangePercentAbs = Math.abs(fatRateChangePercent);
+                const fatRateArrow = fatRateChange > 0 ? '↑' : '↓';
+                const fatRateChangeClass = fatRateChange < 0 ? 'positive' : 'negative';
+                fatRateChangeCard.querySelector('.change').innerHTML = `${fatRateArrow} ${fatRateChangePercentAbs}%`;
+                fatRateChangeCard.querySelector('.change').className = `change ${fatRateChangeClass}`;
             } else {
-                document.querySelector('.metric-card:nth-child(4) .change').innerHTML = 'N/A';
-                document.querySelector('.metric-card:nth-child(4) .change').className = 'change';
+                fatRateChangeCard.querySelector('.change').innerHTML = 'N/A';
+                fatRateChangeCard.querySelector('.change').className = 'change';
             }
 
             // 动态添加新增指标卡片
@@ -985,6 +1098,10 @@
                         }
                     ]
                 });
+                
+                // 更新时间范围显示和指标卡片
+                updateTimeRange();
+                updateMetrics();
             });
         });
 
