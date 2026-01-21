@@ -271,6 +271,8 @@
             }
             updateChart();
             updateMetrics();
+            // 更新健康分析摘要
+            updateHealthSummary();
         }
 
         // 保存数据到localStorage
@@ -799,10 +801,12 @@
                 }
             });
             
-            // 添加dataZoom事件监听，当用户调整数据缩放时更新时间范围和指标
+            // 添加dataZoom事件监听，当用户调整数据缩放时更新所有相关内容
             myChart.on('dataZoom', function(params) {
                 updateTimeRange();
                 updateMetrics();
+                // 直接调用updateHealthSummary，确保健康分析摘要与数据范围同步
+                updateHealthSummary();
             });
             
             // 添加DOM点击事件作为备选方案
@@ -1024,6 +1028,8 @@
 
             // 动态添加新增指标卡片
             updateAdditionalMetrics(lastData);
+            // 更新健康分析摘要
+            updateHealthSummary();
         }
 
         // 更新新增指标
@@ -1057,6 +1063,198 @@
                     <div class="change">${metric.desc}</div>
                 </div>
             `).join('');
+        }
+
+        // 更新健康分析摘要
+        function updateHealthSummary() {
+            if (rawData.length === 0) return;
+            
+            // 获取当前显示的数据范围 - 从metrics计算中复用相同的逻辑
+            // 确保与指标卡片使用相同的数据范围
+            let startIndex = 0;
+            let endIndex = rawData.length - 1;
+            
+            // 首先尝试从全局变量获取，这样可以确保与指标卡片一致
+            // 这里我们直接使用与updateMetrics相同的逻辑
+            try {
+                // 获取当前图表的dataZoom配置，以确定当前显示的数据范围
+                const option = myChart.getOption();
+                
+                // 查找slider类型的dataZoom，这是用户实际操作的滑块
+                const dataZoom = option.dataZoom && option.dataZoom.find(dz => dz.type === 'slider');
+                
+                if (dataZoom && dataZoom.start !== undefined && dataZoom.end !== undefined) {
+                    const startPercent = dataZoom.start / 100;
+                    const endPercent = dataZoom.end / 100;
+                    
+                    startIndex = Math.round(startPercent * (rawData.length - 1));
+                    endIndex = Math.round(endPercent * (rawData.length - 1));
+                }
+            } catch (error) {
+                // 如果获取图表配置失败，使用默认的整个数据集范围
+            }
+            
+            const firstData = rawData[startIndex];
+            const lastData = rawData[endIndex];
+            
+            // 计算变化值
+            const weightChange = lastData.weight - firstData.weight;
+            const fatRateChange = (lastData.fatRate && firstData.fatRate) ? (lastData.fatRate - firstData.fatRate) : null;
+            const weightChangePercent = ((weightChange / firstData.weight) * 100).toFixed(1);
+            
+            // 格式化日期
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${year}年${month}月${day}日`;
+            };
+            
+            // 术语库
+            const weightChangeTerms = {
+                significantLoss: [
+                    '成功减重', '取得了显著的减重效果', '减重成效明显', '减重表现出色'
+                ],
+                slightLoss: [
+                    '体重略有下降', '体重呈现下降趋势', '减重进展平稳', '体重缓慢下降'
+                ],
+                significantGain: [
+                    '体重有所增加', '体重呈现上升趋势', '体重有所上涨', '体重上升明显'
+                ],
+                slightGain: [
+                    '体重略有上升', '体重小幅增加', '体重缓慢上升', '体重稍有增加'
+                ],
+                stable: [
+                    '体重保持稳定', '体重变化不大', '体重维持在稳定水平', '体重基本不变'
+                ]
+            };
+            
+            const fatRateTerms = {
+                significantLoss: [
+                    '体脂率明显下降', '体脂率降低显著', '体脂率减少明显', '体脂率下降较快'
+                ],
+                slightLoss: [
+                    '体脂率略有下降', '体脂率缓慢降低', '体脂率呈现下降趋势', '体脂率小幅减少'
+                ],
+                significantGain: [
+                    '体脂率有所上升', '体脂率呈现上升趋势', '体脂率增加明显', '体脂率上升较快'
+                ],
+                slightGain: [
+                    '体脂率略有上升', '体脂率小幅增加', '体脂率缓慢上升', '体脂率稍有增加'
+                ],
+                stable: [
+                    '体脂率保持稳定', '体脂率变化不大', '体脂率维持在稳定水平', '体脂率基本不变'
+                ]
+            };
+            
+            const trendTerms = {
+                accelerating: [
+                    '减重速度加快', '减重趋势明显增强', '减重势头良好', '减重效果进一步提升'
+                ],
+                decelerating: [
+                    '减重速度放缓', '减重趋势有所减弱', '减重进展趋于平稳', '减重效果逐渐稳定'
+                ],
+                stable: [
+                    '减重过程保持稳定', '减重趋势平稳', '减重进展持续稳定', '减重效果维持稳定'
+                ]
+            };
+            
+            // 选择合适的术语
+            let weightTerm, fatRateTerm, trendTerm;
+            
+            // 体重变化术语选择
+            if (Math.abs(weightChangePercent) > 5) {
+                weightTerm = weightChange < 0 ? 
+                    weightChangeTerms.significantLoss[Math.floor(Math.random() * weightChangeTerms.significantLoss.length)] :
+                    weightChangeTerms.significantGain[Math.floor(Math.random() * weightChangeTerms.significantGain.length)];
+            } else if (Math.abs(weightChangePercent) > 1) {
+                weightTerm = weightChange < 0 ? 
+                    weightChangeTerms.slightLoss[Math.floor(Math.random() * weightChangeTerms.slightLoss.length)] :
+                    weightChangeTerms.slightGain[Math.floor(Math.random() * weightChangeTerms.slightGain.length)];
+            } else {
+                weightTerm = weightChangeTerms.stable[Math.floor(Math.random() * weightChangeTerms.stable.length)];
+            }
+            
+            // 体脂率变化术语选择
+            if (fatRateChange !== null) {
+                const fatRateChangePercent = ((fatRateChange / firstData.fatRate) * 100).toFixed(1);
+                if (Math.abs(fatRateChangePercent) > 5) {
+                    fatRateTerm = fatRateChange < 0 ? 
+                        fatRateTerms.significantLoss[Math.floor(Math.random() * fatRateTerms.significantLoss.length)] :
+                        fatRateTerms.significantGain[Math.floor(Math.random() * fatRateTerms.significantGain.length)];
+                } else if (Math.abs(fatRateChangePercent) > 1) {
+                    fatRateTerm = fatRateChange < 0 ? 
+                        fatRateTerms.slightLoss[Math.floor(Math.random() * fatRateTerms.slightLoss.length)] :
+                        fatRateTerms.slightGain[Math.floor(Math.random() * fatRateTerms.slightGain.length)];
+                } else {
+                    fatRateTerm = fatRateTerms.stable[Math.floor(Math.random() * fatRateTerms.stable.length)];
+                }
+            } else {
+                fatRateTerm = '体脂率数据不完整';
+            }
+            
+            // 趋势术语选择（简单实现，可根据需要扩展）
+            trendTerm = trendTerms.stable[Math.floor(Math.random() * trendTerms.stable.length)];
+            
+            // 生成摘要内容
+            let summaryText = `<p>根据您的体重变化数据，从${formatDate(firstData.date)}至${formatDate(lastData.date)}，您的体重${weightTerm}`;
+            
+            if (Math.abs(weightChange) > 0.1) {
+                summaryText += `，变化了${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)}斤`;
+            }
+            
+            summaryText += `。`;
+            
+            if (fatRateChange !== null && Math.abs(fatRateChange) > 0.1) {
+                summaryText += ` 同时，您的${fatRateTerm}，从${firstData.fatRate}%${fatRateChange > 0 ? '上升' : '下降'}到${lastData.fatRate}%`;
+            }
+            
+            summaryText += `</p>`;
+            
+            // 添加第二条摘要
+            summaryText += `<p>您的${trendTerm}。`;
+            
+            // 根据情况添加建议
+            if (weightChange < 0 && fatRateChange && fatRateChange < 0) {
+                summaryText += ` 这是一个非常积极的趋势，建议继续保持当前的健康管理方式。`;
+            } else if (weightChange < 0 && fatRateChange && fatRateChange > 0) {
+                summaryText += ` 值得注意的是，体脂率有所上升，建议适当增加力量训练，以提高肌肉比例。`;
+            } else if (weightChange > 0) {
+                summaryText += ` 建议关注饮食结构和运动习惯，保持健康的生活方式。`;
+            } else {
+                summaryText += ` 建议继续保持良好的健康管理习惯。`;
+            }
+            
+            summaryText += `</p>`;
+            
+            // 简化：直接找到chart元素之后的summary元素
+            const chartElement = document.getElementById('chart');
+            if (chartElement) {
+                // 查找chart元素所在的容器
+                const parentElement = chartElement.parentElement;
+                
+                // 查找健康分析摘要容器 - 它应该是chart之后的第一个summary元素
+                let summarySection = null;
+                const siblings = parentElement.children;
+                
+                // 遍历所有子元素，找到chart之后的第一个summary
+                let foundChart = false;
+                for (let i = 0; i < siblings.length; i++) {
+                    if (siblings[i] === chartElement) {
+                        foundChart = true;
+                    } else if (foundChart && siblings[i].classList.contains('summary')) {
+                        summarySection = siblings[i];
+                        break;
+                    }
+                }
+                
+                // 如果找到，更新内容
+                if (summarySection) {
+                    // 直接替换整个内容，确保完全更新
+                    summarySection.innerHTML = `<h3>健康分析摘要</h3>${summaryText}`;
+                }
+            }
         }
 
         // 响应式调整
@@ -1102,6 +1300,8 @@
                 // 更新时间范围显示和指标卡片
                 updateTimeRange();
                 updateMetrics();
+                // 直接调用updateHealthSummary，确保健康分析摘要与数据范围同步
+                updateHealthSummary();
             });
         });
 
