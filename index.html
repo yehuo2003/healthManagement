@@ -257,6 +257,7 @@
                 <div class="dropdown-content" id="settingsDropdown">
                     <a href="#" onclick="openPersonalInfoModal()">个人基础信息</a>
                     <a href="#" onclick="openHealthDataModal()">健康数据录入</a>
+                    <a href="#" onclick="openDataComparisonModal()">健康数据比对</a>
                 </div>
             </div>
         </div>
@@ -409,6 +410,41 @@
                         导入数据
                         <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display: none;">
                     </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 健康数据比对模态框 -->
+    <div id="dataComparisonModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>健康数据比对</h3>
+                <button class="close-button" onclick="closeDataComparisonModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 日期选择区域 -->
+                <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; flex-direction: column; width: 200px;">
+                        <label for="date1">选择第一个日期</label>
+                        <select id="date1" style="padding: 8px;">
+                            <!-- 日期选项将通过JavaScript动态生成 -->
+                        </select>
+                    </div>
+                    <div style="display: flex; flex-direction: column; width: 200px;">
+                        <label for="date2">选择第二个日期</label>
+                        <select id="date2" style="padding: 8px;">
+                            <!-- 日期选项将通过JavaScript动态生成 -->
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button onclick="compareHealthData()" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">开始比对</button>
+                    </div>
+                </div>
+                
+                <!-- 比对结果表格 -->
+                <div id="comparisonResult" style="margin-top: 20px;">
+                    <!-- 比对结果将通过JavaScript动态生成 -->
                 </div>
             </div>
         </div>
@@ -617,6 +653,169 @@
             document.getElementById('dailyMetricsModal').style.display = 'none';
         }
         
+        // 健康数据指标配置
+        const healthMetricsConfig = [
+            { key: 'date', label: '日期', unit: '', showChange: false },
+            { key: 'weight', label: '体重', unit: '斤', showChange: true },
+            { key: 'fatRate', label: '体脂率', unit: '%', showChange: true },
+            { key: 'muscleMass', label: '肌肉量', unit: 'kg', showChange: true },
+            { key: 'waterRate', label: '水分率', unit: '%', showChange: true },
+            { key: 'boneMass', label: '骨量', unit: 'kg', showChange: true },
+            { key: 'visceralFat', label: '内脏脂肪', unit: '', showChange: true },
+            { key: 'waist', label: '腰围', unit: 'cm', showChange: true },
+            { key: 'hip', label: '臀围', unit: 'cm', showChange: true },
+            { key: 'systolic', label: '收缩压', unit: 'mmHg', showChange: true },
+            { key: 'diastolic', label: '舒张压', unit: 'mmHg', showChange: true },
+            { key: 'heartRate', label: '静息心率', unit: '次/分', showChange: true },
+            { key: 'bmi', label: 'BMI', unit: '', showChange: true },
+            { key: 'bmr', label: '基础代谢率', unit: '大卡', showChange: true },
+            { key: 'whr', label: '腰臀比', unit: '', showChange: true },
+            { key: 'muscleRate', label: '肌肉率', unit: '%', showChange: true },
+            { key: 'leanBodyMass', label: '瘦体重', unit: '斤', showChange: true },
+            { key: 'fatMass', label: '脂肪重量', unit: '斤', showChange: true },
+            { key: 'tdee', label: '每日总消耗', unit: '大卡', showChange: true }
+        ];
+        
+        // 健康数据比对功能
+        function compareHealthData() {
+            // 获取用户选择的日期
+            const date1 = document.getElementById('date1').value;
+            const date2 = document.getElementById('date2').value;
+            
+            // 验证日期选择
+            if (!date1 || !date2) {
+                alert('请选择两个日期进行比对');
+                return;
+            }
+            
+            if (date1 === date2) {
+                alert('请选择不同的日期进行比对');
+                return;
+            }
+            
+            // 查找对应日期的数据
+            const data1 = rawData.find(item => item.date === date1);
+            const data2 = rawData.find(item => item.date === date2);
+            
+            if (!data1 || !data2) {
+                alert('找不到所选日期的数据');
+                return;
+            }
+            
+            // 确定哪个日期更早
+            const isDate1Earlier = new Date(date1) < new Date(date2);
+            const earlierData = isDate1Earlier ? data1 : data2;
+            const laterData = isDate1Earlier ? data2 : data1;
+            const earlierDate = isDate1Earlier ? date1 : date2;
+            const laterDate = isDate1Earlier ? date2 : date1;
+            
+            // 生成比对结果表格
+            generateComparisonTable(earlierData, laterData, earlierDate, laterDate);
+        }
+        
+        // 生成比对结果表格
+        function generateComparisonTable(data1, data2, date1, date2) {
+            const resultContainer = document.getElementById('comparisonResult');
+            
+            // 表格样式
+            const tableStyle = `
+                style="
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-top: 20px;
+                    font-size: 14px;
+                "
+            `;
+            
+            const thStyle = `
+                style="
+                    background-color: #f8f9fa;
+                    border: 1px solid #dee2e6;
+                    padding: 12px;
+                    text-align: left;
+                    font-weight: 600;
+                "
+            `;
+            
+            const tdStyle = `
+                style="
+                    border: 1px solid #dee2e6;
+                    padding: 12px;
+                    text-align: center;
+                "
+            `;
+            
+            // 生成表格HTML
+            let tableHTML = `
+                <div style="margin-bottom: 15px;">
+                    <h4>数据比对结果：${date1} vs ${date2}</h4>
+                    <p style="color: #6c757d;">注：左侧为较早日期，右侧为较晚日期</p>
+                </div>
+                <table ${tableStyle}>
+                    <thead>
+                        <tr>
+                            <th ${thStyle}>指标</th>
+                            <th ${thStyle} colspan="2">数据</th>
+                            <th ${thStyle}>变化</th>
+                        </tr>
+                        <tr>
+                            <th ${thStyle}></th>
+                            <th ${thStyle}>${date1}</th>
+                            <th ${thStyle}>${date2}</th>
+                            <th ${thStyle}></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            // 遍历所有指标，生成表格行
+            healthMetricsConfig.forEach(config => {
+                const { key, label, unit, showChange } = config;
+                
+                // 获取两个日期的指标值
+                const value1 = data1[key] !== undefined && data1[key] !== null ? data1[key] : '-';
+                const value2 = data2[key] !== undefined && data2[key] !== null ? data2[key] : '-';
+                
+                // 计算变化
+                let changeHTML = '';
+                if (showChange && value1 !== '-' && value2 !== '-') {
+                    const diff = parseFloat(value2) - parseFloat(value1);
+                    const absDiff = Math.abs(diff).toFixed(1);
+                    
+                    if (diff > 0) {
+                        // 上涨
+                        changeHTML = `<span style="color: red; font-weight: bold;">+${absDiff} ${unit} <span style="font-size: 16px;">↑</span></span>`;
+                    } else if (diff < 0) {
+                        // 下降
+                        changeHTML = `<span style="color: green; font-weight: bold;">${absDiff} ${unit} <span style="font-size: 16px;">↓</span></span>`;
+                    } else {
+                        // 无变化
+                        changeHTML = '<span style="color: #6c757d;">无变化</span>';
+                    }
+                } else if (showChange) {
+                    changeHTML = '-';
+                }
+                
+                // 生成指标行
+                tableHTML += `
+                    <tr>
+                        <td ${tdStyle} style="text-align: left; font-weight: 500;">${label}</td>
+                        <td ${tdStyle}>${value1} ${unit}</td>
+                        <td ${tdStyle}>${value2} ${unit}</td>
+                        <td ${tdStyle}>${changeHTML}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            // 显示表格
+            resultContainer.innerHTML = tableHTML;
+        }
+        
         // 个人基础信息模态框控制
         function openPersonalInfoModal() {
             // 先关闭设置菜单
@@ -637,6 +836,65 @@
         
         function closeHealthDataModal() {
             document.getElementById('healthDataModal').style.display = 'none';
+        }
+        
+        // 健康数据比对模态框控制
+        function openDataComparisonModal() {
+            // 先关闭设置菜单
+            toggleSettingsMenu();
+            // 清空之前的比对结果
+            document.getElementById('comparisonResult').innerHTML = '';
+            // 初始化日期选择器
+            initDateSelectors();
+            // 显示模态框
+            document.getElementById('dataComparisonModal').style.display = 'block';
+        }
+        
+        function closeDataComparisonModal() {
+            document.getElementById('dataComparisonModal').style.display = 'none';
+        }
+        
+        // 初始化日期选择器
+        function initDateSelectors() {
+            const date1Select = document.getElementById('date1');
+            const date2Select = document.getElementById('date2');
+            
+            // 清空现有选项
+            date1Select.innerHTML = '';
+            date2Select.innerHTML = '';
+            
+            // 检查是否有数据
+            if (rawData.length === 0) {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = '暂无数据';
+                date1Select.appendChild(option);
+                date2Select.appendChild(option.cloneNode(true));
+                return;
+            }
+            
+            // 按日期排序，最新的日期在前面
+            const sortedData = [...rawData].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // 添加空选项
+            const emptyOption = document.createElement('option');
+            emptyOption.value = '';
+            emptyOption.textContent = '请选择日期';
+            date1Select.appendChild(emptyOption);
+            date2Select.appendChild(emptyOption.cloneNode(true));
+            
+            // 添加日期选项
+            sortedData.forEach(item => {
+                const option1 = document.createElement('option');
+                option1.value = item.date;
+                option1.textContent = item.date;
+                date1Select.appendChild(option1);
+                
+                const option2 = document.createElement('option');
+                option2.value = item.date;
+                option2.textContent = item.date;
+                date2Select.appendChild(option2);
+            });
         }
         
         // 设置菜单切换函数
