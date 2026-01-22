@@ -745,24 +745,26 @@
                 "
             `;
             
+            // 格式化日期显示
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                const year = date.getFullYear();
+                const month = date.getMonth() + 1;
+                const day = date.getDate();
+                return `${year}年${month}月${day}日`;
+            };
+            
             // 生成表格HTML
             let tableHTML = `
                 <div style="margin-bottom: 15px;">
-                    <h4>数据比对结果：${date1} vs ${date2}</h4>
-                    <p style="color: #6c757d;">注：左侧为较早日期，右侧为较晚日期</p>
+                    <h4>数据比对结果：${formatDate(date1)} vs ${formatDate(date2)}</h4>
                 </div>
                 <table ${tableStyle}>
                     <thead>
                         <tr>
                             <th ${thStyle}>指标</th>
-                            <th ${thStyle} colspan="2">数据</th>
+                            <th ${thStyle} colspan="2">数据(${formatDate(date1)} - ${formatDate(date2)})</th>
                             <th ${thStyle}>变化</th>
-                        </tr>
-                        <tr>
-                            <th ${thStyle}></th>
-                            <th ${thStyle}>${date1}</th>
-                            <th ${thStyle}>${date2}</th>
-                            <th ${thStyle}></th>
                         </tr>
                     </thead>
                     <tbody>
