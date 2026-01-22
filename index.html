@@ -191,11 +191,75 @@
             padding: 15px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+        
+        /* 设置菜单样式 */
+        .settings-menu {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .settings-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .settings-button:hover {
+            background-color: #2980b9;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            background-color: white;
+            min-width: 180px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            z-index: 1001;
+            overflow: hidden;
+        }
+        
+        .dropdown-content a {
+            color: #333;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            text-align: left;
+            transition: background-color 0.2s;
+        }
+        
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        
+        /* 显示下拉菜单 */
+        .dropdown-content.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>健康管理</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>健康管理</h1>
+            <!-- 设置下拉菜单 -->
+            <div class="settings-menu">
+                <button class="settings-button" onclick="toggleSettingsMenu()">
+                    <span>设置</span>
+                    <span style="margin-left: 5px; font-size: 12px;">▼</span>
+                </button>
+                <div class="dropdown-content" id="settingsDropdown">
+                    <a href="#" onclick="openPersonalInfoModal()">个人基础信息</a>
+                    <a href="#" onclick="openHealthDataModal()">健康数据录入</a>
+                </div>
+            </div>
+        </div>
         <div class="subtitle">2024年7月30日 - 2025年8月22日</div>
         
         <div class="metrics">
@@ -236,87 +300,117 @@
         </div>
     </div>
 
-    <div class="summary">
-        <h3>个人基础信息</h3>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-            <input type="number" id="userHeight" placeholder="身高(cm)" step="0.1" style="width: 150px;">
-            <input type="number" id="userAge" placeholder="年龄" step="1" style="width: 100px;">
-            <select id="userGender" style="width: 120px; padding: 8px;">
-                <option value="male">男</option>
-                <option value="female">女</option>
-            </select>
-            <select id="userActivityLevel" style="width: 180px; padding: 8px;">
-                <option value="1.2">久坐不动（几乎不运动）</option>
-                <option value="1.375">轻度活动（每周1-3天运动）</option>
-                <option value="1.55">中度活动（每周3-5天运动）</option>
-                <option value="1.725">高度活动（每周6-7天运动）</option>
-                <option value="1.9">极度活动（体力劳动或每天高强度运动）</option>
-            </select>
-            <button onclick="saveUserInfo()" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer;">保存基础信息</button>
+    <!-- 模态框结构 -->
+    <!-- 每日健康数据模态框 -->
+    <div id="dailyMetricsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">每日健康数据</h3>
+                <button class="close-button" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 每日健康数据内容将通过JavaScript动态生成 -->
+            </div>
         </div>
     </div>
 
-    <div class="summary">
-        <h3>健康数据录入</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputDate">日期</label>
-                <input type="date" id="inputDate" value="">
+    <!-- 个人基础信息模态框 -->
+    <div id="personalInfoModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>个人基础信息</h3>
+                <button class="close-button" onclick="closePersonalInfoModal()">&times;</button>
             </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputWeight">体重(斤)</label>
-                <input type="number" id="inputWeight" placeholder="体重(斤)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputFatRate">体脂率(%)</label>
-                <input type="number" id="inputFatRate" placeholder="体脂率(%)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputMuscleMass">肌肉量(kg)</label>
-                <input type="number" id="inputMuscleMass" placeholder="肌肉量(kg)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputWaterRate">水分率(%)</label>
-                <input type="number" id="inputWaterRate" placeholder="水分率(%)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputVisceralFat">内脏脂肪等级</label>
-                <input type="number" id="inputVisceralFat" placeholder="内脏脂肪等级" step="0.5">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputBoneMass">骨量(kg)</label>
-                <input type="number" id="inputBoneMass" placeholder="骨量(kg)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputWaist">腰围(cm)</label>
-                <input type="number" id="inputWaist" placeholder="腰围(cm)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputHip">臀围(cm)</label>
-                <input type="number" id="inputHip" placeholder="臀围(cm)" step="0.1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputSystolic">收缩压(mmHg)</label>
-                <input type="number" id="inputSystolic" placeholder="收缩压" step="1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputDiastolic">舒张压(mmHg)</label>
-                <input type="number" id="inputDiastolic" placeholder="舒张压" step="1">
-            </div>
-            <div style="display: flex; flex-direction: column;">
-                <label for="inputHeartRate">心率(次/分)</label>
-                <input type="number" id="inputHeartRate" placeholder="静息心率" step="1">
+            <div class="modal-body">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <input type="number" id="userHeight" placeholder="身高(cm)" step="0.1" style="width: 150px;">
+                    <input type="number" id="userAge" placeholder="年龄" step="1" style="width: 100px;">
+                    <select id="userGender" style="width: 120px; padding: 8px;">
+                        <option value="male">男</option>
+                        <option value="female">女</option>
+                    </select>
+                    <select id="userActivityLevel" style="width: 180px; padding: 8px;">
+                        <option value="1.2">久坐不动（几乎不运动）</option>
+                        <option value="1.375">轻度活动（每周1-3天运动）</option>
+                        <option value="1.55">中度活动（每周3-5天运动）</option>
+                        <option value="1.725">高度活动（每周6-7天运动）</option>
+                        <option value="1.9">极度活动（体力劳动或每天高强度运动）</option>
+                    </select>
+                    <button onclick="saveUserInfo()" style="padding: 8px 16px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer;">保存基础信息</button>
+                </div>
             </div>
         </div>
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <button onclick="addData()" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">添加/更新数据</button>
-        </div>
-        <div style="display: flex; gap: 10px;">
-            <button onclick="exportData()" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出数据</button>
-            <label style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; display: inline-block;">
-                导入数据
-                <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display: none;">
-            </label>
+    </div>
+
+    <!-- 健康数据录入模态框 -->
+    <div id="healthDataModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>健康数据录入</h3>
+                <button class="close-button" onclick="closeHealthDataModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputDate">日期</label>
+                        <input type="date" id="inputDate" value="">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputWeight">体重(斤)</label>
+                        <input type="number" id="inputWeight" placeholder="体重(斤)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputFatRate">体脂率(%)</label>
+                        <input type="number" id="inputFatRate" placeholder="体脂率(%)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputMuscleMass">肌肉量(kg)</label>
+                        <input type="number" id="inputMuscleMass" placeholder="肌肉量(kg)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputWaterRate">水分率(%)</label>
+                        <input type="number" id="inputWaterRate" placeholder="水分率(%)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputVisceralFat">内脏脂肪等级</label>
+                        <input type="number" id="inputVisceralFat" placeholder="内脏脂肪等级" step="0.5">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputBoneMass">骨量(kg)</label>
+                        <input type="number" id="inputBoneMass" placeholder="骨量(kg)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputWaist">腰围(cm)</label>
+                        <input type="number" id="inputWaist" placeholder="腰围(cm)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputHip">臀围(cm)</label>
+                        <input type="number" id="inputHip" placeholder="臀围(cm)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputSystolic">收缩压(mmHg)</label>
+                        <input type="number" id="inputSystolic" placeholder="收缩压" step="1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputDiastolic">舒张压(mmHg)</label>
+                        <input type="number" id="inputDiastolic" placeholder="舒张压" step="1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <label for="inputHeartRate">心率(次/分)</label>
+                        <input type="number" id="inputHeartRate" placeholder="静息心率" step="1">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button onclick="addData()" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">添加/更新数据</button>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="exportData()" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出数据</button>
+                    <label style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; display: inline-block;">
+                        导入数据
+                        <input type="file" id="importFile" accept=".json" onchange="importData(event)" style="display: none;">
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -514,6 +608,64 @@
             return '肥胖';
         }
 
+        // 模态框控制函数
+        function openModal() {
+            document.getElementById('dailyMetricsModal').style.display = 'block';
+        }
+        
+        function closeModal() {
+            document.getElementById('dailyMetricsModal').style.display = 'none';
+        }
+        
+        // 个人基础信息模态框控制
+        function openPersonalInfoModal() {
+            // 先关闭设置菜单
+            toggleSettingsMenu();
+            document.getElementById('personalInfoModal').style.display = 'block';
+        }
+        
+        function closePersonalInfoModal() {
+            document.getElementById('personalInfoModal').style.display = 'none';
+        }
+        
+        // 健康数据录入模态框控制
+        function openHealthDataModal() {
+            // 先关闭设置菜单
+            toggleSettingsMenu();
+            document.getElementById('healthDataModal').style.display = 'block';
+        }
+        
+        function closeHealthDataModal() {
+            document.getElementById('healthDataModal').style.display = 'none';
+        }
+        
+        // 设置菜单切换函数
+        function toggleSettingsMenu() {
+            const dropdown = document.getElementById('settingsDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // 点击页面其他地方关闭下拉菜单
+        window.onclick = function(event) {
+            if (!event.target.closest('.settings-menu')) {
+                const dropdowns = document.getElementsByClassName('dropdown-content');
+                for (let i = 0; i < dropdowns.length; i++) {
+                    const openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+            
+            // 点击模态框外部关闭模态框
+            if (event.target.classList.contains('modal')) {
+                // 关闭所有模态框
+                closeModal();
+                closePersonalInfoModal();
+                closeHealthDataModal();
+            }
+        }
+        
         // 显示当日指标
         function showDailyMetrics(date) {
             // 查找当日数据
@@ -1235,8 +1387,11 @@
                 // 创建新增指标容器
                 metricsContainer = document.createElement('div');
                 metricsContainer.className = 'metrics additional-metrics';
-                const summarySection = document.querySelector('.summary:nth-of-type(3)');
-                summarySection.parentNode.insertBefore(metricsContainer, summarySection.nextSibling);
+                // 找到健康分析摘要部分，在其后面插入
+                const summarySection = document.querySelector('.summary');
+                if (summarySection) {
+                    summarySection.parentNode.insertBefore(metricsContainer, summarySection.nextSibling);
+                }
             }
 
             // 新增指标数据
@@ -1397,7 +1552,7 @@
             let summaryText = `<p>根据您的体重变化数据，从${formatDate(firstData.date)}至${formatDate(lastData.date)}，您的体重${weightTerm}`;
             
             if (Math.abs(weightChange) > 0.1) {
-                summaryText += `，变化了${weightChange > 0 ? '+' : ''}${weightChange.toFixed(1)}斤`;
+                summaryText += `，${weightChange > 0 ? '增加' : '下降'}了${Math.abs(weightChange).toFixed(1)}斤`;
             }
             
             summaryText += `。`;
