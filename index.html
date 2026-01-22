@@ -1656,48 +1656,7 @@
             });
         });
 
-        // 添加模态框HTML结构
-        function initModal() {
-            const modalHTML = `
-                <div id="metricsModal" class="modal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h3 id="modalTitle">当日健康数据</h3>
-                            <button class="close-button" onclick="closeModal()">&times;</button>
-                        </div>
-                        <div class="modal-body" id="modalBody">
-                            <!-- 每日健康数据将动态插入这里 -->
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // 添加到body末尾
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            
-            // 添加点击模态框外部关闭功能
-            const modal = document.getElementById('metricsModal');
-            modal.addEventListener('click', function(event) {
-                if (event.target === modal) {
-                    closeModal();
-                }
-            });
-        }
-        
-        // 打开模态框
-        function openModal() {
-            const modal = document.getElementById('metricsModal');
-            modal.style.display = 'block';
-        }
-        
-        // 关闭模态框
-        function closeModal() {
-            const modal = document.getElementById('metricsModal');
-            modal.style.display = 'none';
-        }
-        
-        // 初始化模态框
-        initModal();
+        // 模态框控制函数已经在前面定义，这里不再重复定义
 
     </script>
 </body>
