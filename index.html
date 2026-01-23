@@ -689,6 +689,11 @@
             { key: 'date', label: '日期', unit: '', showChange: false },
             { key: 'weight', label: '体重', unit: '斤', showChange: true },
             { key: 'fatRate', label: '体脂率', unit: '%', showChange: true },
+            { key: 'bmi', label: 'BMI', unit: '', showChange: true },
+            { key: 'fatMass', label: '脂肪重量', unit: '斤', showChange: true },
+            { key: 'leanBodyMass', label: '瘦体重', unit: '斤', showChange: true },
+            { key: 'bmr', label: '基础代谢率', unit: '大卡', showChange: true },
+            { key: 'tdee', label: '每日总消耗', unit: '大卡', showChange: true },
             { key: 'muscleMass', label: '肌肉量', unit: 'kg', showChange: true },
             { key: 'waterRate', label: '水分率', unit: '%', showChange: true },
             { key: 'boneMass', label: '骨量', unit: 'kg', showChange: true },
@@ -698,13 +703,8 @@
             { key: 'systolic', label: '收缩压', unit: 'mmHg', showChange: true },
             { key: 'diastolic', label: '舒张压', unit: 'mmHg', showChange: true },
             { key: 'heartRate', label: '静息心率', unit: '次/分', showChange: true },
-            { key: 'bmi', label: 'BMI', unit: '', showChange: true },
-            { key: 'bmr', label: '基础代谢率', unit: '大卡', showChange: true },
             { key: 'whr', label: '腰臀比', unit: '', showChange: true },
             { key: 'muscleRate', label: '肌肉率', unit: '%', showChange: true },
-            { key: 'leanBodyMass', label: '瘦体重', unit: '斤', showChange: true },
-            { key: 'fatMass', label: '脂肪重量', unit: '斤', showChange: true },
-            { key: 'tdee', label: '每日总消耗', unit: '大卡', showChange: true }
         ];
         
         // 健康数据比对功能
@@ -832,6 +832,30 @@
                 return `${year}年${month}月${day}日`;
             };
             
+            // 定义等级颜色映射
+            const levelColors = {
+                // BMI等级
+                '偏瘦': '#f39c12', // 黄色
+                '正常': '#27ae60', // 绿色
+                '超重': '#f39c12', // 黄色
+                '肥胖': '#e74c3c', // 红色
+                
+                // 血压等级
+                '正常': '#27ae60', // 绿色
+                '高血压前期': '#f39c12', // 黄色
+                '高血压1级': '#e74c3c', // 红色
+                '高血压2级': '#c0392b', // 深红色
+                
+                // 腰臀比等级
+                '正常': '#27ae60', // 绿色
+                '中心性肥胖': '#e74c3c', // 红色
+                
+                // 内脏脂肪等级
+                '正常': '#27ae60', // 绿色
+                '偏高': '#f39c12', // 黄色
+                '肥胖': '#e74c3c' // 红色
+            };
+            
             // 生成表格HTML
             let tableHTML = `
                 <div style="margin-bottom: 15px;">
@@ -856,6 +880,44 @@
                 const value1 = data1[key] !== undefined && data1[key] !== null ? data1[key] : '-';
                 const value2 = data2[key] !== undefined && data2[key] !== null ? data2[key] : '-';
                 
+                // 计算两个日期的指标风险等级
+                let riskLevel1 = null;
+                let riskLevel2 = null;
+                
+                // 根据指标类型计算风险等级
+                if (key === 'weight') {
+                    riskLevel1 = calculateWeightLevel(value1, userInfo.height, userInfo.gender);
+                    riskLevel2 = calculateWeightLevel(value2, userInfo.height, userInfo.gender);
+                } else if (key === 'fatRate') {
+                    riskLevel1 = calculateFatRateLevel(value1, userInfo.gender);
+                    riskLevel2 = calculateFatRateLevel(value2, userInfo.gender);
+                } else if (key === 'bmi') {
+                    riskLevel1 = calculateBMILevel(value1);
+                    riskLevel2 = calculateBMILevel(value2);
+                } else if (key === 'whr') {
+                    riskLevel1 = calculateWHRLevel(value1, userInfo.gender);
+                    riskLevel2 = calculateWHRLevel(value2, userInfo.gender);
+                } else if (key === 'visceralFat') {
+                    riskLevel1 = calculateVisceralFatLevel(value1);
+                    riskLevel2 = calculateVisceralFatLevel(value2);
+                } else if (key === 'systolic' || key === 'diastolic') {
+                    // 血压需要同时考虑收缩压和舒张压
+                    riskLevel1 = calculateBloodPressureLevel(data1.systolic, data1.diastolic);
+                    riskLevel2 = calculateBloodPressureLevel(data2.systolic, data2.diastolic);
+                }
+                
+                // 获取风险等级对应的颜色
+                const getValueColor = (riskLevel, value) => {
+                    if (value === '-' || !riskLevel || riskLevel === 'N/A') {
+                        return '#2c3e50'; // 默认颜色
+                    }
+                    return levelColors[riskLevel] || '#2c3e50';
+                };
+                
+                // 获取颜色
+                const color1 = getValueColor(riskLevel1, value1);
+                const color2 = getValueColor(riskLevel2, value2);
+                
                 // 计算变化
                 let changeHTML = '';
                 if (showChange && value1 !== '-' && value2 !== '-') {
@@ -876,12 +938,16 @@
                     changeHTML = '-';
                 }
                 
-                // 生成指标行
+                // 生成指标行，将颜色样式应用到span元素上
                 tableHTML += `
                     <tr>
                         <td ${tdStyle} style="text-align: left; font-weight: 500;">${label}</td>
-                        <td ${tdStyle}>${value1} ${unit}</td>
-                        <td ${tdStyle}>${value2} ${unit}</td>
+                        <td ${tdStyle}>
+                            <span style="color: ${color1}; font-weight: 700;">${value1} ${unit}</span>
+                        </td>
+                        <td ${tdStyle}>
+                            <span style="color: ${color2}; font-weight: 700;">${value2} ${unit}</span>
+                        </td>
                         <td ${tdStyle}>${changeHTML}</td>
                     </tr>
                 `;
