@@ -538,6 +538,8 @@
                 enhancedItem.leanBodyMass = calculateLeanBodyMass(enhancedItem.weight, enhancedItem.fatRate);
                 enhancedItem.fatMass = calculateFatMass(enhancedItem.weight, enhancedItem.fatRate);
                 enhancedItem.tdee = calculateTDEE(enhancedItem.bmr, userInfo.activityLevel);
+                // 添加肥胖度计算
+                enhancedItem.obesityDegree = calculateObesityDegree(enhancedItem.weight, userInfo.height, userInfo.gender);
                 
                 return enhancedItem;
             });
@@ -674,6 +676,38 @@
                 return '肥胖';
             }
         }
+        
+        // 计算肥胖度
+        function calculateObesityDegree(actualWeight, height, gender) {
+            if (!actualWeight || !height || !gender) return null;
+            
+            // 获取理想体重
+            const idealWeight = calculateIdealWeight(height, gender);
+            if (!idealWeight) return null;
+            
+            // 计算肥胖度：(实际体重 - 理想体重) / 理想体重 * 100%
+            const actualWeightNum = parseFloat(actualWeight);
+            const idealWeightNum = parseFloat(idealWeight);
+            
+            if (idealWeightNum === 0) return null;
+            
+            const obesityDegree = ((actualWeightNum - idealWeightNum) / idealWeightNum) * 100;
+            return obesityDegree.toFixed(1);
+        }
+        
+        // 计算肥胖度风险等级
+        function calculateObesityDegreeLevel(obesityDegree) {
+            if (!obesityDegree) return 'N/A';
+            
+            const degreeNum = parseFloat(obesityDegree);
+            
+            if (degreeNum < -20.0) return '消瘦';
+            if (degreeNum >= -20.0 && degreeNum < -10.0) return '偏瘦';
+            if (degreeNum >= -10.0 && degreeNum <= 10.0) return '标准';
+            if (degreeNum > 10.0 && degreeNum <= 20.0) return '偏胖';
+            if (degreeNum > 20.0 && degreeNum <= 50.0) return '肥胖';
+            return '重度';
+        }
 
         // 模态框控制函数
         function openModal() {
@@ -690,6 +724,7 @@
             { key: 'weight', label: '体重', unit: '斤', showChange: true },
             { key: 'fatRate', label: '体脂率', unit: '%', showChange: true },
             { key: 'bmi', label: 'BMI', unit: '', showChange: true },
+            { key: 'obesityDegree', label: '肥胖度', unit: '%', showChange: true },
             { key: 'fatMass', label: '脂肪重量', unit: '斤', showChange: true },
             { key: 'leanBodyMass', label: '瘦体重', unit: '斤', showChange: true },
             { key: 'bmr', label: '基础代谢率', unit: '大卡', showChange: true },
@@ -788,6 +823,11 @@
                 enhancedItem.fatMass = calculateFatMass(enhancedItem.weight, enhancedItem.fatRate);
             }
             
+            // 计算肥胖度（如果缺失）
+            if (!enhancedItem.obesityDegree && userInfo.height && userInfo.gender) {
+                enhancedItem.obesityDegree = calculateObesityDegree(enhancedItem.weight, userInfo.height, userInfo.gender);
+            }
+            
             return enhancedItem;
         }
         
@@ -853,7 +893,15 @@
                 // 内脏脂肪等级
                 '正常': '#27ae60', // 绿色
                 '偏高': '#f39c12', // 黄色
-                '肥胖': '#e74c3c' // 红色
+                '肥胖': '#e74c3c', // 红色
+                
+                // 肥胖度等级
+                '消瘦': '#7f8c8d', // 灰色
+                '偏瘦': '#f39c12', // 黄色
+                '标准': '#27ae60', // 绿色
+                '偏胖': '#f39c12', // 黄色
+                '肥胖': '#e74c3c', // 红色
+                '重度': '#c0392b' // 深红色
             };
             
             // 生成表格HTML
@@ -894,6 +942,9 @@
                 } else if (key === 'bmi') {
                     riskLevel1 = calculateBMILevel(value1);
                     riskLevel2 = calculateBMILevel(value2);
+                } else if (key === 'obesityDegree') {
+                    riskLevel1 = calculateObesityDegreeLevel(value1);
+                    riskLevel2 = calculateObesityDegreeLevel(value2);
                 } else if (key === 'whr') {
                     riskLevel1 = calculateWHRLevel(value1, userInfo.gender);
                     riskLevel2 = calculateWHRLevel(value2, userInfo.gender);
@@ -1102,6 +1153,11 @@
             const fatMass = calculateFatMass(dailyData.weight, dailyData.fatRate);
             const muscleRate = calculateMuscleRate(dailyData.muscleMass, dailyData.weight);
             const idealWeight = calculateIdealWeight(userInfo.height, userInfo.gender);
+            // 计算肥胖度
+            const obesityDegree = dailyData.obesityDegree || calculateObesityDegree(dailyData.weight, userInfo.height, userInfo.gender);
+            // 计算肥胖度风险等级
+            const obesityDegreeLevel = calculateObesityDegreeLevel(obesityDegree);
+            
             const bloodPressureLevel = calculateBloodPressureLevel(dailyData.systolic, dailyData.diastolic);
             const bmiLevel = calculateBMILevel(bmi);
             const whrLevel = calculateWHRLevel(dailyData.whr, userInfo.gender);
@@ -1132,7 +1188,15 @@
                 // 内脏脂肪等级
                 '正常': '#27ae60', // 绿色
                 '偏高': '#f39c12', // 黄色
-                '肥胖': '#e74c3c' // 红色
+                '肥胖': '#e74c3c', // 红色
+                
+                // 肥胖度等级
+                '消瘦': '#7f8c8d', // 灰色
+                '偏瘦': '#f39c12', // 黄色
+                '标准': '#27ae60', // 绿色
+                '偏胖': '#f39c12', // 黄色
+                '肥胖': '#e74c3c', // 红色
+                '重度': '#c0392b' // 深红色
             };
             
             // 定义指标风险等级映射，用于直接为数值添加颜色
@@ -1143,7 +1207,8 @@
                 '内脏脂肪': visceralFatLevel,
                 '腰臀比': whrLevel,
                 '收缩压': bloodPressureLevel,
-                '舒张压': bloodPressureLevel
+                '舒张压': bloodPressureLevel,
+                '肥胖度': obesityDegreeLevel
             };
             
             // 准备所有指标，用“-”占位
@@ -1173,7 +1238,9 @@
                 { label: '脂肪重量', value: fatMass ? `${fatMass} 斤` : '-' },
                 { label: '肌肉率', value: muscleRate ? `${muscleRate}%` : '-' },
                 { label: '理想体重', value: idealWeight ? `${idealWeight} 斤` : '-' },
+                { label: '肥胖度', value: obesityDegree ? `${obesityDegree}%` : '-' },
                 { label: 'BMI等级', value: bmiLevel && bmiLevel !== 'N/A' ? bmiLevel : '-', isLevel: true },
+                { label: '肥胖度等级', value: obesityDegreeLevel && obesityDegreeLevel !== 'N/A' ? obesityDegreeLevel : '-', isLevel: true },
                 { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-', isLevel: true },
                 { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-', isLevel: true },
                 { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-', isLevel: true }
@@ -1247,6 +1314,8 @@
             const leanBodyMass = calculateLeanBodyMass(weight, fatRate);
             const fatMass = calculateFatMass(weight, fatRate);
             const tdee = calculateTDEE(bmr, userInfo.activityLevel);
+            // 添加肥胖度计算
+            const obesityDegree = calculateObesityDegree(weight, userInfo.height, userInfo.gender);
 
             // 创建数据对象，包含所有指标（基础指标和衍生指标）
             const dataItem = {
@@ -1269,7 +1338,8 @@
                 muscleRate,
                 leanBodyMass,
                 fatMass,
-                tdee
+                tdee,
+                obesityDegree
             };
 
             // 检查是否已存在该日期的数据
