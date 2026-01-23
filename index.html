@@ -702,15 +702,62 @@
                 return;
             }
             
+            // 确保所有衍生指标都已计算
+            const enhancedData1 = calculateMissingMetrics(data1);
+            const enhancedData2 = calculateMissingMetrics(data2);
+            
             // 确定哪个日期更早
             const isDate1Earlier = new Date(date1) < new Date(date2);
-            const earlierData = isDate1Earlier ? data1 : data2;
-            const laterData = isDate1Earlier ? data2 : data1;
+            const earlierData = isDate1Earlier ? enhancedData1 : enhancedData2;
+            const laterData = isDate1Earlier ? enhancedData2 : enhancedData1;
             const earlierDate = isDate1Earlier ? date1 : date2;
             const laterDate = isDate1Earlier ? date2 : date1;
             
             // 生成比对结果表格
             generateComparisonTable(earlierData, laterData, earlierDate, laterDate);
+        }
+        
+        // 计算缺失的衍生指标
+        function calculateMissingMetrics(dataItem) {
+            const enhancedItem = { ...dataItem };
+            
+            // 计算BMI（如果缺失）
+            if (!enhancedItem.bmi && userInfo.height) {
+                enhancedItem.bmi = calculateBMI(enhancedItem.weight, userInfo.height);
+            }
+            
+            // 计算BMR（如果缺失）
+            if (!enhancedItem.bmr && userInfo.height && userInfo.age && userInfo.gender) {
+                enhancedItem.bmr = calculateBMR(enhancedItem.weight, userInfo.height, userInfo.age, userInfo.gender);
+                enhancedItem.bmr = enhancedItem.bmr ? Math.round(enhancedItem.bmr) : null;
+            }
+            
+            // 计算TDEE（如果缺失）
+            if (!enhancedItem.tdee && enhancedItem.bmr && userInfo.activityLevel) {
+                enhancedItem.tdee = calculateTDEE(enhancedItem.bmr, userInfo.activityLevel);
+            }
+            
+            // 计算腰臀比（如果缺失）
+            if (!enhancedItem.whr && enhancedItem.waist && enhancedItem.hip) {
+                enhancedItem.whr = calculateWHR(enhancedItem.waist, enhancedItem.hip);
+            }
+            
+            // 计算肌肉率（如果缺失）
+            if (!enhancedItem.muscleRate && enhancedItem.muscleMass && enhancedItem.weight) {
+                enhancedItem.muscleRate = calculateMuscleRate(enhancedItem.muscleMass, enhancedItem.weight);
+            }
+            
+            // 计算瘦体重（如果缺失）
+            if (!enhancedItem.leanBodyMass && enhancedItem.weight && enhancedItem.fatRate) {
+                enhancedItem.leanBodyMass = calculateLeanBodyMass(enhancedItem.weight, enhancedItem.fatRate);
+            }
+            
+            // 计算脂肪重量（如果缺失）
+            if (!enhancedItem.fatMass && enhancedItem.weight && enhancedItem.fatRate) {
+                enhancedItem.fatMass = calculateFatMass(enhancedItem.weight, enhancedItem.fatRate);
+            }
+            
+            return enhancedItem;
         }
         
         // 生成比对结果表格
