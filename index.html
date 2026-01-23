@@ -643,6 +643,37 @@
             if (visceralFat >= 10 && visceralFat <= 14) return '偏高';
             return '肥胖';
         }
+        
+        // 计算体重风险等级
+        function calculateWeightLevel(weight, height, gender) {
+            if (!weight || !height || !gender) return 'N/A';
+            
+            // 计算BMI来判断体重是否正常
+            const bmi = calculateBMI(weight, height);
+            if (!bmi) return 'N/A';
+            
+            return calculateBMILevel(bmi);
+        }
+        
+        // 计算体脂率风险等级
+        function calculateFatRateLevel(fatRate, gender) {
+            if (!fatRate || !gender) return 'N/A';
+            
+            const fatRateNum = parseFloat(fatRate);
+            
+            // 体脂率正常范围参考值
+            if (gender === 'male') {
+                if (fatRateNum < 10) return '偏瘦';
+                if (fatRateNum >= 10 && fatRateNum <= 20) return '正常';
+                if (fatRateNum > 20 && fatRateNum <= 25) return '超重';
+                return '肥胖';
+            } else {
+                if (fatRateNum < 15) return '偏瘦';
+                if (fatRateNum >= 15 && fatRateNum <= 25) return '正常';
+                if (fatRateNum > 25 && fatRateNum <= 30) return '超重';
+                return '肥胖';
+            }
+        }
 
         // 模态框控制函数
         function openModal() {
@@ -1009,6 +1040,10 @@
             const bmiLevel = calculateBMILevel(bmi);
             const whrLevel = calculateWHRLevel(dailyData.whr, userInfo.gender);
             const visceralFatLevel = calculateVisceralFatLevel(dailyData.visceralFat);
+            
+            // 计算体重、体脂率等指标的风险等级
+            const weightLevel = calculateWeightLevel(dailyData.weight, userInfo.height, userInfo.gender);
+            const fatRateLevel = calculateFatRateLevel(dailyData.fatRate, userInfo.gender);
 
             // 定义等级颜色映射
             const levelColors = {
@@ -1032,6 +1067,17 @@
                 '正常': '#27ae60', // 绿色
                 '偏高': '#f39c12', // 黄色
                 '肥胖': '#e74c3c' // 红色
+            };
+            
+            // 定义指标风险等级映射，用于直接为数值添加颜色
+            const metricRiskLevels = {
+                '体重': weightLevel,
+                '体脂率': fatRateLevel,
+                'BMI': bmiLevel,
+                '内脏脂肪': visceralFatLevel,
+                '腰臀比': whrLevel,
+                '收缩压': bloodPressureLevel,
+                '舒张压': bloodPressureLevel
             };
             
             // 准备所有指标，用“-”占位
@@ -1079,6 +1125,12 @@
                 let valueColor = '#2c3e50'; // 默认颜色
                 if (metric.isLevel && metric.value !== '-') {
                     valueColor = levelColors[metric.value] || '#2c3e50';
+                } else {
+                    // 检查是否是需要根据风险等级着色的数值指标
+                    const riskLevel = metricRiskLevels[metric.label];
+                    if (riskLevel && riskLevel !== 'N/A' && metric.value !== '-') {
+                        valueColor = levelColors[riskLevel] || '#2c3e50';
+                    }
                 }
                 
                 metricsHTML += `
