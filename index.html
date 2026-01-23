@@ -373,6 +373,10 @@
                         <input type="number" id="inputWaterRate" placeholder="水分率(%)" step="0.1">
                     </div>
                     <div style="display: flex; flex-direction: column;">
+                        <label for="inputProtein">蛋白质(%)</label>
+                        <input type="number" id="inputProtein" placeholder="蛋白质(%)" step="0.1">
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
                         <label for="inputVisceralFat">内脏脂肪等级</label>
                         <input type="number" id="inputVisceralFat" placeholder="内脏脂肪等级" step="0.5">
                     </div>
@@ -708,6 +712,17 @@
             if (degreeNum > 20.0 && degreeNum <= 50.0) return '肥胖';
             return '重度';
         }
+        
+        // 计算蛋白质风险等级
+        function calculateProteinLevel(protein) {
+            if (!protein) return 'N/A';
+            
+            const proteinNum = parseFloat(protein);
+            
+            if (proteinNum < 16.0) return '不足';
+            if (proteinNum >= 16.0 && proteinNum <= 20.0) return '标准';
+            return '优';
+        }
 
         // 模态框控制函数
         function openModal() {
@@ -731,15 +746,16 @@
             { key: 'tdee', label: '每日总消耗', unit: '大卡', showChange: true },
             { key: 'muscleMass', label: '肌肉量', unit: 'kg', showChange: true },
             { key: 'waterRate', label: '水分率', unit: '%', showChange: true },
+            { key: 'protein', label: '蛋白质', unit: '%', showChange: true },
             { key: 'boneMass', label: '骨量', unit: 'kg', showChange: true },
             { key: 'visceralFat', label: '内脏脂肪', unit: '', showChange: true },
+            { key: 'muscleRate', label: '肌肉率', unit: '%', showChange: true },
             { key: 'waist', label: '腰围', unit: 'cm', showChange: true },
             { key: 'hip', label: '臀围', unit: 'cm', showChange: true },
             { key: 'systolic', label: '收缩压', unit: 'mmHg', showChange: true },
             { key: 'diastolic', label: '舒张压', unit: 'mmHg', showChange: true },
             { key: 'heartRate', label: '静息心率', unit: '次/分', showChange: true },
             { key: 'whr', label: '腰臀比', unit: '', showChange: true },
-            { key: 'muscleRate', label: '肌肉率', unit: '%', showChange: true },
         ];
         
         // 健康数据比对功能
@@ -901,7 +917,12 @@
                 '标准': '#27ae60', // 绿色
                 '偏胖': '#f39c12', // 黄色
                 '肥胖': '#e74c3c', // 红色
-                '重度': '#c0392b' // 深红色
+                '重度': '#c0392b', // 深红色
+                
+                // 蛋白质等级
+                '不足': '#e74c3c', // 红色
+                '标准': '#27ae60', // 绿色
+                '优': '#3498db' // 蓝色
             };
             
             // 生成表格HTML
@@ -955,6 +976,10 @@
                     // 血压需要同时考虑收缩压和舒张压
                     riskLevel1 = calculateBloodPressureLevel(data1.systolic, data1.diastolic);
                     riskLevel2 = calculateBloodPressureLevel(data2.systolic, data2.diastolic);
+                } else if (key === 'protein') {
+                    // 蛋白质风险等级计算
+                    riskLevel1 = calculateProteinLevel(value1);
+                    riskLevel2 = calculateProteinLevel(value2);
                 }
                 
                 // 获取风险等级对应的颜色
@@ -1166,6 +1191,7 @@
             // 计算体重、体脂率等指标的风险等级
             const weightLevel = calculateWeightLevel(dailyData.weight, userInfo.height, userInfo.gender);
             const fatRateLevel = calculateFatRateLevel(dailyData.fatRate, userInfo.gender);
+            const proteinLevel = calculateProteinLevel(dailyData.protein);
 
             // 定义等级颜色映射
             const levelColors = {
@@ -1196,7 +1222,12 @@
                 '标准': '#27ae60', // 绿色
                 '偏胖': '#f39c12', // 黄色
                 '肥胖': '#e74c3c', // 红色
-                '重度': '#c0392b' // 深红色
+                '重度': '#c0392b', // 深红色
+                
+                // 蛋白质等级
+                '不足': '#e74c3c', // 红色
+                '标准': '#27ae60', // 绿色
+                '优': '#3498db' // 蓝色
             };
             
             // 定义指标风险等级映射，用于直接为数值添加颜色
@@ -1208,7 +1239,8 @@
                 '腰臀比': whrLevel,
                 '收缩压': bloodPressureLevel,
                 '舒张压': bloodPressureLevel,
-                '肥胖度': obesityDegreeLevel
+                '肥胖度': obesityDegreeLevel,
+                '蛋白质': proteinLevel
             };
             
             // 准备所有指标，用“-”占位
@@ -1219,6 +1251,7 @@
                 { label: '体脂率', value: dailyData.fatRate ? `${dailyData.fatRate}%` : '-' },
                 { label: '肌肉量', value: dailyData.muscleMass !== undefined && dailyData.muscleMass !== null ? `${dailyData.muscleMass} kg` : '-' },
                 { label: '水分率', value: dailyData.waterRate !== undefined && dailyData.waterRate !== null ? `${dailyData.waterRate}%` : '-' },
+                { label: '蛋白质', value: dailyData.protein !== undefined && dailyData.protein !== null ? `${dailyData.protein}%` : '-' },
                 { label: '骨量', value: dailyData.boneMass !== undefined && dailyData.boneMass !== null ? `${dailyData.boneMass} kg` : '-' },
                 { label: '内脏脂肪', value: dailyData.visceralFat !== undefined && dailyData.visceralFat !== null ? dailyData.visceralFat : '-' },
                 { label: '腰围', value: dailyData.waist !== undefined && dailyData.waist !== null ? `${dailyData.waist} cm` : '-' },
@@ -1243,7 +1276,8 @@
                 { label: '肥胖度等级', value: obesityDegreeLevel && obesityDegreeLevel !== 'N/A' ? obesityDegreeLevel : '-', isLevel: true },
                 { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-', isLevel: true },
                 { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-', isLevel: true },
-                { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-', isLevel: true }
+                { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-', isLevel: true },
+                { label: '蛋白质等级', value: proteinLevel && proteinLevel !== 'N/A' ? proteinLevel : '-', isLevel: true }
             ];
 
             // 更新模态框标题
@@ -1300,6 +1334,7 @@
             const systolic = parseFloat(document.getElementById('inputSystolic').value) || null;
             const diastolic = parseFloat(document.getElementById('inputDiastolic').value) || null;
             const heartRate = parseFloat(document.getElementById('inputHeartRate').value) || null;
+            const protein = parseFloat(document.getElementById('inputProtein').value) || null;
 
             if (!date || isNaN(weight)) {
                 alert('请填写完整数据（日期和体重为必填项）');
@@ -1324,6 +1359,7 @@
                 fatRate: isNaN(fatRate) ? null : fatRate,
                 muscleMass,
                 waterRate,
+                protein,
                 visceralFat,
                 boneMass,
                 waist,
@@ -1366,6 +1402,7 @@
             document.getElementById('inputFatRate').value = '';
             document.getElementById('inputMuscleMass').value = '';
             document.getElementById('inputWaterRate').value = '';
+            document.getElementById('inputProtein').value = '';
             document.getElementById('inputVisceralFat').value = '';
             document.getElementById('inputBoneMass').value = '';
             document.getElementById('inputWaist').value = '';
