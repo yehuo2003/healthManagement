@@ -1521,6 +1521,11 @@
                     enhancedItem.leanBodyMass = calculateLeanBodyMass(enhancedItem.weight, enhancedItem.fatRate);
                 }
                 
+                // 计算肥胖度（如果缺失）
+                if (!enhancedItem.obesityDegree && userInfo.height && userInfo.gender) {
+                    enhancedItem.obesityDegree = calculateObesityDegree(enhancedItem.weight, userInfo.height, userInfo.gender);
+                }
+                
                 return enhancedItem;
             });
             
@@ -1660,8 +1665,8 @@
                 }
             };
 
-            // 渲染图表
-            option && myChart.setOption(option);
+            // 渲染图表，使用notMerge: true确保完全替换旧配置
+            option && myChart.setOption(option, true);
             
             // 重新添加图表点击事件，确保图表更新后事件仍然有效
             addChartClickEvent();
