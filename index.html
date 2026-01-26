@@ -474,19 +474,19 @@
                 document.getElementById('userActivityLevel').value = userInfo.activityLevel || '1.2';
             }
 
-            // 加载健康数据
-            const storedData = localStorage.getItem(STORAGE_KEY);
-            if (storedData) {
-                rawData = JSON.parse(storedData);
-            } else {
-                // 从JSON文件加载初始数据
-                try {
-                    const response = await fetch('./data.json');
-                    rawData = await response.json();
-                    // 保存到localStorage
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
-                } catch (error) {
-                    console.error('Failed to load initial data:', error);
+            // 从JSON文件加载最新数据，确保用户修改后能看到更新
+            try {
+                const response = await fetch('./data.json');
+                rawData = await response.json();
+                // 保存到localStorage
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+            } catch (error) {
+                console.error('Failed to load initial data:', error);
+                // 如果从JSON文件加载失败，尝试从localStorage加载
+                const storedData = localStorage.getItem(STORAGE_KEY);
+                if (storedData) {
+                    rawData = JSON.parse(storedData);
+                } else {
                     rawData = [];
                 }
             }
@@ -1173,10 +1173,10 @@
                 tdee = calculateTDEE(bmr, userInfo.activityLevel);
             }
 
-            // 计算衍生指标
-            const leanBodyMass = calculateLeanBodyMass(dailyData.weight, dailyData.fatRate);
-            const fatMass = calculateFatMass(dailyData.weight, dailyData.fatRate);
-            const muscleRate = calculateMuscleRate(dailyData.muscleMass, dailyData.weight);
+            // 计算衍生指标，优先使用已有值，否则重新计算
+            const leanBodyMass = dailyData.leanBodyMass || calculateLeanBodyMass(dailyData.weight, dailyData.fatRate);
+            const fatMass = dailyData.fatMass || calculateFatMass(dailyData.weight, dailyData.fatRate);
+            const muscleRate = dailyData.muscleRate || calculateMuscleRate(dailyData.muscleMass, dailyData.weight);
             const idealWeight = calculateIdealWeight(userInfo.height, userInfo.gender);
             // 计算肥胖度
             const obesityDegree = dailyData.obesityDegree || calculateObesityDegree(dailyData.weight, userInfo.height, userInfo.gender);
