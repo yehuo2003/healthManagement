@@ -304,6 +304,14 @@
     <!-- 模态框结构 -->
     <!-- 每日健康数据模态框 -->
     <div id="dailyMetricsModal" class="modal">
+        <!-- 左箭头 -->
+        <div id="prevArrow" class="modal-arrow left-arrow" onclick="navigateDailyData(-1)">
+            &lt;
+        </div>
+        <!-- 右箭头 -->
+        <div id="nextArrow" class="modal-arrow right-arrow" onclick="navigateDailyData(1)">
+            &gt;
+        </div>
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="modalTitle">每日健康数据</h3>
@@ -314,6 +322,43 @@
             </div>
         </div>
     </div>
+    
+    <style>
+        /* 模态框箭头样式 */
+        .modal-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            font-size: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            border-radius: 50%;
+            z-index: 1001;
+            transition: all 0.3s;
+        }
+        
+        .modal-arrow:hover {
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .left-arrow {
+            left: 20px;
+        }
+        
+        .right-arrow {
+            right: 20px;
+        }
+        
+        .modal-arrow.hidden {
+            display: none;
+        }
+    </style>
 
     <!-- 个人基础信息模态框 -->
     <div id="personalInfoModal" class="modal">
@@ -1146,13 +1191,21 @@
             }
         }
         
+        // 当前显示的日期索引
+        let currentDateIndex = -1;
+        
         // 显示当日指标
         function showDailyMetrics(date) {
-            // 查找当日数据
-            const dailyData = rawData.find(item => item.date === date);
-            if (!dailyData) {
+            // 查找当日数据的索引
+            currentDateIndex = rawData.findIndex(item => item.date === date);
+            if (currentDateIndex === -1) {
                 return;
             }
+            
+            const dailyData = rawData[currentDateIndex];
+            
+            // 更新箭头显示状态
+            updateArrowVisibility();
 
             // 手动计算BMI（因为原始数据中可能没有）
             let bmi = dailyData.bmi;
@@ -1318,6 +1371,40 @@
             
             // 打开模态框
             openModal();
+        }
+        
+        // 更新箭头显示状态
+        function updateArrowVisibility() {
+            const prevArrow = document.getElementById('prevArrow');
+            const nextArrow = document.getElementById('nextArrow');
+            
+            // 如果是第一天，隐藏左箭头
+            if (currentDateIndex === 0) {
+                prevArrow.classList.add('hidden');
+            } else {
+                prevArrow.classList.remove('hidden');
+            }
+            
+            // 如果是最后一天，隐藏右箭头
+            if (currentDateIndex === rawData.length - 1) {
+                nextArrow.classList.add('hidden');
+            } else {
+                nextArrow.classList.remove('hidden');
+            }
+        }
+        
+        // 导航每日数据
+        function navigateDailyData(direction) {
+            // 计算新的日期索引
+            const newIndex = currentDateIndex + direction;
+            
+            // 检查边界条件
+            if (newIndex < 0 || newIndex >= rawData.length) {
+                return;
+            }
+            
+            // 显示新日期的数据
+            showDailyMetrics(rawData[newIndex].date);
         }
 
         // 添加数据
