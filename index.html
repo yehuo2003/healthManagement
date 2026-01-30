@@ -258,6 +258,7 @@
                     <a href="#" onclick="openPersonalInfoModal()">个人基础信息</a>
                     <a href="#" onclick="openHealthDataModal()">健康数据录入</a>
                     <a href="#" onclick="openDataComparisonModal()">健康数据比对</a>
+                    <a href="#" onclick="openHealthGoalModal()">健康目标管理</a>
                 </div>
             </div>
         </div>
@@ -499,12 +500,62 @@
         </div>
     </div>
 
+    <!-- 健康目标管理模态框 -->
+    <div id="healthGoalModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>健康目标管理</h3>
+                <button class="close-button" onclick="closeHealthGoalModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 目标设置区域 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>设置新目标</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="goalMetricType">指标类型</label>
+                            <select id="goalMetricType" style="padding: 8px;">
+                                <option value="weight">体重(斤)</option>
+                                <option value="fatRate">体脂率(%)</option>
+                                <option value="bmi">BMI</option>
+                                <option value="waist">腰围(cm)</option>
+                                <option value="muscleMass">肌肉量(kg)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="goalTargetValue">目标值</label>
+                            <input type="number" id="goalTargetValue" placeholder="目标值" step="0.1" style="padding: 8px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="goalTargetDate">目标日期</label>
+                            <input type="date" id="goalTargetDate" style="padding: 8px;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button onclick="addHealthGoal()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">保存目标</button>
+                    </div>
+                </div>
+                
+                <!-- 目标列表区域 -->
+                <div style="margin-bottom: 30px;">
+                    <h4>已设置的目标</h4>
+                    <div id="goalList" style="margin-top: 15px;">
+                        <!-- 目标列表将通过JavaScript动态生成 -->
+                        <div style="text-align: center; color: #7f8c8d; padding: 20px;">暂无设置的目标</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // 数据管理
         let rawData = [];
         let userInfo = {};
+        let healthGoals = [];
         const STORAGE_KEY = 'healthData';
         const USER_INFO_KEY = 'userHealthInfo';
+        const HEALTH_GOALS_KEY = 'healthGoals';
 
         // 初始化数据
         async function initData() {
@@ -517,6 +568,12 @@
                 document.getElementById('userAge').value = userInfo.age || '';
                 document.getElementById('userGender').value = userInfo.gender || 'male';
                 document.getElementById('userActivityLevel').value = userInfo.activityLevel || '1.2';
+            }
+
+            // 加载健康目标数据
+            const storedGoals = localStorage.getItem(HEALTH_GOALS_KEY);
+            if (storedGoals) {
+                healthGoals = JSON.parse(storedGoals);
             }
 
             // 从JSON文件加载最新数据，确保用户修改后能看到更新
@@ -1170,6 +1227,233 @@
             dropdown.classList.toggle('show');
         }
         
+        // 健康目标管理相关函数
+        function openHealthGoalModal() {
+            // 先关闭设置菜单
+            toggleSettingsMenu();
+            // 更新目标列表
+            updateGoalList();
+            document.getElementById('healthGoalModal').style.display = 'block';
+        }
+        
+        function closeHealthGoalModal() {
+            document.getElementById('healthGoalModal').style.display = 'none';
+        }
+        
+        function saveHealthGoals() {
+            localStorage.setItem(HEALTH_GOALS_KEY, JSON.stringify(healthGoals));
+        }
+        
+        function calculateGoalProgress(goal) {
+            // 获取最新的健康数据
+            if (rawData.length === 0) return 0;
+            
+            const latestData = [...rawData].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            let currentValue = latestData[goal.metricType];
+            
+            // 如果是BMI，需要计算
+            if (goal.metricType === 'bmi' && !currentValue && userInfo.height) {
+                currentValue = calculateBMI(latestData.weight, userInfo.height);
+            }
+            
+            if (!currentValue) return 0;
+            
+            const initialValue = goal.initialValue;
+            const targetValue = goal.targetValue;
+            
+            let progress = 0;
+            if (targetValue < initialValue) {
+                // 目标值小于初始值（如减重）
+                progress = Math.max(0, Math.min(100, ((initialValue - currentValue) / (initialValue - targetValue)) * 100));
+            } else {
+                // 目标值大于初始值（如增加肌肉量）
+                progress = Math.max(0, Math.min(100, ((currentValue - initialValue) / (targetValue - initialValue)) * 100));
+            }
+            
+            return progress;
+        }
+        
+        function updateGoalProgress(goal) {
+            const progress = calculateGoalProgress(goal);
+            goal.progress = progress;
+            goal.currentValue = getLatestMetricValue(goal.metricType);
+            
+            // 更新状态
+            if (progress >= 100) {
+                goal.status = 'completed';
+            } else if (new Date(goal.targetDate) < new Date()) {
+                goal.status = 'failed';
+            } else {
+                goal.status = 'in_progress';
+            }
+        }
+        
+        function getLatestMetricValue(metricType) {
+            if (rawData.length === 0) return null;
+            
+            const latestData = [...rawData].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            let value = latestData[metricType];
+            
+            // 如果是BMI，需要计算
+            if (metricType === 'bmi' && !value && userInfo.height) {
+                value = calculateBMI(latestData.weight, userInfo.height);
+            }
+            
+            return value;
+        }
+        
+        function addHealthGoal() {
+            const metricType = document.getElementById('goalMetricType').value;
+            const targetValue = parseFloat(document.getElementById('goalTargetValue').value);
+            const targetDate = document.getElementById('goalTargetDate').value;
+            
+            if (!metricType || isNaN(targetValue) || !targetDate) {
+                alert('请填写完整的目标信息');
+                return;
+            }
+            
+            // 获取当前值作为初始值
+            const initialValue = getLatestMetricValue(metricType);
+            if (!initialValue) {
+                alert('暂无健康数据，请先录入健康数据');
+                return;
+            }
+            
+            // 验证目标值合理性
+            if (metricType === 'weight' || metricType === 'fatRate' || metricType === 'waist') {
+                if (targetValue >= initialValue) {
+                    if (!confirm('目标值大于当前值，确定要设置这个目标吗？')) {
+                        return;
+                    }
+                }
+            }
+            
+            const newGoal = {
+                id: 'goal-' + Date.now(),
+                metricType: metricType,
+                targetValue: targetValue,
+                currentValue: initialValue,
+                initialValue: initialValue,
+                targetDate: targetDate,
+                createdAt: new Date().toISOString().split('T')[0],
+                progress: 0,
+                status: 'in_progress'
+            };
+            
+            // 计算初始进度
+            updateGoalProgress(newGoal);
+            
+            healthGoals.push(newGoal);
+            saveHealthGoals();
+            updateGoalList();
+            
+            // 重置表单
+            document.getElementById('goalTargetValue').value = '';
+            document.getElementById('goalTargetDate').value = '';
+            
+            alert('目标设置成功！');
+        }
+        
+        function updateHealthGoal(goalId) {
+            // 这里可以实现编辑目标的功能
+            alert('编辑功能待实现');
+        }
+        
+        function deleteHealthGoal(goalId) {
+            if (confirm('确定要删除这个目标吗？')) {
+                healthGoals = healthGoals.filter(goal => goal.id !== goalId);
+                saveHealthGoals();
+                updateGoalList();
+                alert('目标删除成功！');
+            }
+        }
+        
+        function updateGoalList() {
+            const goalListContainer = document.getElementById('goalList');
+            
+            if (healthGoals.length === 0) {
+                goalListContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 20px;">暂无设置的目标</div>';
+                return;
+            }
+            
+            // 更新所有目标的进度
+            healthGoals.forEach(goal => updateGoalProgress(goal));
+            saveHealthGoals();
+            
+            let html = '';
+            healthGoals.forEach(goal => {
+                // 获取指标名称
+                const metricNames = {
+                    'weight': '体重',
+                    'fatRate': '体脂率',
+                    'bmi': 'BMI',
+                    'waist': '腰围',
+                    'muscleMass': '肌肉量'
+                };
+                
+                const metricName = metricNames[goal.metricType] || goal.metricType;
+                const unit = goal.metricType === 'weight' ? '斤' : 
+                             goal.metricType === 'fatRate' ? '%' : 
+                             goal.metricType === 'waist' ? 'cm' : 
+                             goal.metricType === 'muscleMass' ? 'kg' : '';
+                
+                // 获取状态颜色
+                let statusColor = '#3498db'; // 进行中
+                if (goal.status === 'completed') {
+                    statusColor = '#27ae60'; // 已完成
+                } else if (goal.status === 'failed') {
+                    statusColor = '#e74c3c'; // 已失败
+                }
+                
+                // 格式化日期
+                const formatDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+                };
+                
+                html += `
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${statusColor};">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div>
+                                <h5 style="margin: 0; color: #2c3e50;">${metricName}目标</h5>
+                                <p style="margin: 5px 0; color: #7f8c8d;">从 ${goal.initialValue}${unit} 到 ${goal.targetValue}${unit}</p>
+                                <p style="margin: 5px 0; color: #7f8c8d;">目标日期：${formatDate(goal.targetDate)}</p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="updateHealthGoal('${goal.id}')" style="padding: 5px 10px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">编辑</button>
+                                <button onclick="deleteHealthGoal('${goal.id}')" style="padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">删除</button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span style="font-size: 14px; color: #7f8c8d;">完成进度</span>
+                                <span style="font-size: 14px; font-weight: bold; color: ${statusColor};">${goal.progress.toFixed(1)}%</span>
+                            </div>
+                            <div style="height: 10px; background: #ecf0f1; border-radius: 5px; overflow: hidden;">
+                                <div style="height: 100%; width: ${goal.progress}%; background: ${statusColor}; border-radius: 5px; transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px; font-size: 14px;">
+                            <span style="padding: 3px 8px; border-radius: 12px; background: ${statusColor}; color: white;">
+                                ${goal.status === 'in_progress' ? '进行中' : goal.status === 'completed' ? '已完成' : '已失败'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            goalListContainer.innerHTML = html;
+        }
+        
+        function getGoalStatusText(status) {
+            switch (status) {
+                case 'completed': return '已完成';
+                case 'failed': return '已失败';
+                case 'in_progress': return '进行中';
+                default: return '未知';
+            }
+        }
+
         // 点击页面其他地方关闭下拉菜单
         window.onclick = function(event) {
             if (!event.target.closest('.settings-menu')) {
@@ -1188,6 +1472,7 @@
                 closeModal();
                 closePersonalInfoModal();
                 closeHealthDataModal();
+                closeHealthGoalModal();
             }
         }
         
