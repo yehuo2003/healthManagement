@@ -200,32 +200,42 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
         let riskLevel2 = null;
         
         // 根据指标类型计算风险等级
-        if (key === 'weight') {
-            riskLevel1 = dataManager.calculateWeightLevel(value1, userInfo.height, userInfo.gender);
-            riskLevel2 = dataManager.calculateWeightLevel(value2, userInfo.height, userInfo.gender);
-        } else if (key === 'fatRate') {
-            riskLevel1 = dataManager.calculateFatRateLevel(value1, userInfo.gender);
-            riskLevel2 = dataManager.calculateFatRateLevel(value2, userInfo.gender);
-        } else if (key === 'bmi') {
-            riskLevel1 = dataManager.calculateBMILevel(value1);
-            riskLevel2 = dataManager.calculateBMILevel(value2);
-        } else if (key === 'obesityDegree') {
-            riskLevel1 = dataManager.calculateObesityDegreeLevel(value1);
-            riskLevel2 = dataManager.calculateObesityDegreeLevel(value2);
-        } else if (key === 'whr') {
-            riskLevel1 = dataManager.calculateWHRLevel(value1, userInfo.gender);
-            riskLevel2 = dataManager.calculateWHRLevel(value2, userInfo.gender);
-        } else if (key === 'visceralFat') {
-            riskLevel1 = dataManager.calculateVisceralFatLevel(value1);
-            riskLevel2 = dataManager.calculateVisceralFatLevel(value2);
-        } else if (key === 'systolic' || key === 'diastolic') {
-            // 血压需要同时考虑收缩压和舒张压
-            riskLevel1 = dataManager.calculateBloodPressureLevel(earlierData.systolic, earlierData.diastolic);
-            riskLevel2 = dataManager.calculateBloodPressureLevel(laterData.systolic, laterData.diastolic);
-        } else if (key === 'protein') {
-            // 蛋白质风险等级计算
-            riskLevel1 = dataManager.calculateProteinLevel(value1);
-            riskLevel2 = dataManager.calculateProteinLevel(value2);
+        switch (key) {
+            case 'weight':
+                riskLevel1 = dataManager.calculateWeightLevel(value1, userInfo.height, userInfo.gender);
+                riskLevel2 = dataManager.calculateWeightLevel(value2, userInfo.height, userInfo.gender);
+                break;
+            case 'fatRate':
+                riskLevel1 = dataManager.calculateFatRateLevel(value1, userInfo.gender);
+                riskLevel2 = dataManager.calculateFatRateLevel(value2, userInfo.gender);
+                break;
+            case 'bmi':
+                riskLevel1 = dataManager.calculateBMILevel(value1);
+                riskLevel2 = dataManager.calculateBMILevel(value2);
+                break;
+            case 'obesityDegree':
+                riskLevel1 = dataManager.calculateObesityDegreeLevel(value1);
+                riskLevel2 = dataManager.calculateObesityDegreeLevel(value2);
+                break;
+            case 'whr':
+                riskLevel1 = dataManager.calculateWHRLevel(value1, userInfo.gender);
+                riskLevel2 = dataManager.calculateWHRLevel(value2, userInfo.gender);
+                break;
+            case 'visceralFat':
+                riskLevel1 = dataManager.calculateVisceralFatLevel(value1);
+                riskLevel2 = dataManager.calculateVisceralFatLevel(value2);
+                break;
+            case 'systolic':
+            case 'diastolic':
+                // 血压需要同时考虑收缩压和舒张压
+                riskLevel1 = dataManager.calculateBloodPressureLevel(earlierData.systolic, earlierData.diastolic);
+                riskLevel2 = dataManager.calculateBloodPressureLevel(laterData.systolic, laterData.diastolic);
+                break;
+            case 'protein':
+                // 蛋白质风险等级计算
+                riskLevel1 = dataManager.calculateProteinLevel(value1);
+                riskLevel2 = dataManager.calculateProteinLevel(value2);
+                break;
         }
         
         // 获取风险等级对应的颜色

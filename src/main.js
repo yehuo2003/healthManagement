@@ -16,7 +16,7 @@ import * as healthGoalUtils from './utils/healthGoalUtils.js';
 import * as healthReportUtils from './utils/healthReportUtils.js';
 
 // 导入配置模块
-import { healthMetricsConfig, levelColors, chartMetrics, STORAGE_KEY, USER_INFO_KEY, HEALTH_GOALS_KEY } from './config/index.js';
+import { healthMetricsConfig, levelColors, chartMetrics, STORAGE_KEY, USER_INFO_KEY, HEALTH_GOALS_KEY, formatDate, weightChangeTerms, fatRateTerms, trendTerms } from './config/index.js';
 
 // 全局变量
 let rawData = [];
@@ -445,43 +445,6 @@ function showDailyMetrics(date) {
     const fatRateLevel = dataManager.calculateFatRateLevel(dailyData.fatRate, userInfo.gender);
     const proteinLevel = dataManager.calculateProteinLevel(dailyData.protein);
 
-    // 定义等级颜色映射
-    const levelColors = {
-        // BMI等级
-        '偏瘦': '#f39c12', // 黄色
-        '正常': '#27ae60', // 绿色
-        '超重': '#f39c12', // 黄色
-        '肥胖': '#e74c3c', // 红色
-        
-        // 血压等级
-        '正常': '#27ae60', // 绿色
-        '高血压前期': '#f39c12', // 黄色
-        '高血压1级': '#e74c3c', // 红色
-        '高血压2级': '#c0392b', // 深红色
-        
-        // 腰臀比等级
-        '正常': '#27ae60', // 绿色
-        '中心性肥胖': '#e74c3c', // 红色
-        
-        // 内脏脂肪等级
-        '正常': '#27ae60', // 绿色
-        '偏高': '#f39c12', // 黄色
-        '肥胖': '#e74c3c', // 红色
-        
-        // 肥胖度等级
-        '消瘦': '#7f8c8d', // 灰色
-        '偏瘦': '#f39c12', // 黄色
-        '标准': '#27ae60', // 绿色
-        '偏胖': '#f39c12', // 黄色
-        '肥胖': '#e74c3c', // 红色
-        '重度': '#c0392b', // 深红色
-        
-        // 蛋白质等级
-        '不足': '#e74c3c', // 红色
-        '标准': '#27ae60', // 绿色
-        '优': '#3498db' // 蓝色
-    };
-    
     // 定义指标风险等级映射，用于直接为数值添加颜色
     const metricRiskLevels = {
         '体重': weightLevel,
@@ -603,127 +566,14 @@ window.navigateDailyData = function(direction) {
     }
 };
 
-// 更新指标卡片
-function updateMetrics() {
-    if (rawData.length === 0) return;
-    
-    // 按日期排序
-    const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const firstData = sortedData[0];
-    const lastData = sortedData[sortedData.length - 1];
-    
-    // 计算体重变化
-    const weightChange = lastData.weight - firstData.weight;
-    const weightChangePercent = ((weightChange / firstData.weight) * 100).toFixed(1);
-    
-    // 计算体脂率变化
-    const fatRateChange = (lastData.fatRate || 0) - (firstData.fatRate || 0);
-    
-    // 更新指标卡片
-    const metricsContainer = document.querySelector('.metrics');
-    if (metricsContainer) {
-        metricsContainer.innerHTML = `
-            <div class="metric-card">
-                <h4>初始体重</h4>
-                <div class="value">${firstData.weight.toFixed(1)} 斤</div>
-                <div class="change">${firstData.date}</div>
-            </div>
-            <div class="metric-card">
-                <h4>当前体重</h4>
-                <div class="value">${lastData.weight.toFixed(1)} 斤</div>
-                <div class="change">${lastData.date}</div>
-            </div>
-            <div class="metric-card">
-                <h4>体重变化</h4>
-                <div class="value ${weightChange < 0 ? 'positive' : 'negative'}">${weightChange.toFixed(1)} 斤</div>
-                <div class="change ${weightChange < 0 ? 'positive' : 'negative'}">${weightChange < 0 ? '↓' : '↑'} ${Math.abs(weightChangePercent)}%</div>
-            </div>
-            <div class="metric-card">
-                <h4>体脂率变化</h4>
-                <div class="value ${fatRateChange < 0 ? 'positive' : 'negative'}">${(firstData.fatRate || 0).toFixed(1)}% → ${(lastData.fatRate || 0).toFixed(1)}%</div>
-                <div class="change ${fatRateChange < 0 ? 'positive' : 'negative'}">${fatRateChange < 0 ? '↓' : '↑'} ${Math.abs(fatRateChange).toFixed(1)}%</div>
-            </div>
-        `;
-    }
-    
-    // 更新时间范围显示
-    const subtitle = document.querySelector('.subtitle');
-    if (subtitle) {
-        subtitle.textContent = `${firstData.date} - ${lastData.date}`;
-    }
-}
 
-// 更新健康分析摘要
-function updateHealthSummary() {
-    if (rawData.length === 0) return;
-    
-    // 按日期排序
-    const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const firstData = sortedData[0];
-    const lastData = sortedData[sortedData.length - 1];
-    
+
+// 生成健康分析摘要内容
+function generateHealthSummaryText(firstData, lastData) {
     // 计算体重变化和体脂率变化
     const weightChange = lastData.weight - firstData.weight;
     const fatRateChange = (lastData.fatRate && firstData.fatRate) ? (lastData.fatRate - firstData.fatRate) : null;
     const weightChangePercent = ((weightChange / firstData.weight) * 100).toFixed(1);
-    
-    // 格式化日期
-    const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${year}年${month}月${day}日`;
-    };
-    
-    // 术语库
-    const weightChangeTerms = {
-        significantLoss: [
-            '成功减重', '取得了显著的减重效果', '减重成效明显', '减重表现出色'
-        ],
-        slightLoss: [
-            '体重略有下降', '体重呈现下降趋势', '减重进展平稳', '体重缓慢下降'
-        ],
-        significantGain: [
-            '体重有所增加', '体重呈现上升趋势', '体重有所上涨', '体重上升明显'
-        ],
-        slightGain: [
-            '体重略有上升', '体重小幅增加', '体重缓慢上升', '体重稍有增加'
-        ],
-        stable: [
-            '体重保持稳定', '体重变化不大', '体重维持在稳定水平', '体重基本不变'
-        ]
-    };
-    
-    const fatRateTerms = {
-        significantLoss: [
-            '体脂率明显下降', '体脂率降低显著', '体脂率减少明显', '体脂率下降较快'
-        ],
-        slightLoss: [
-            '体脂率略有下降', '体脂率缓慢降低', '体脂率呈现下降趋势', '体脂率小幅减少'
-        ],
-        significantGain: [
-            '体脂率有所上升', '体脂率呈现上升趋势', '体脂率增加明显', '体脂率上升较快'
-        ],
-        slightGain: [
-            '体脂率略有上升', '体脂率小幅增加', '体脂率缓慢上升', '体脂率稍有增加'
-        ],
-        stable: [
-            '体脂率保持稳定', '体脂率变化不大', '体脂率维持在稳定水平', '体脂率基本不变'
-        ]
-    };
-    
-    const trendTerms = {
-        accelerating: [
-            '减重速度加快', '减重趋势明显增强', '减重势头良好', '减重效果进一步提升'
-        ],
-        decelerating: [
-            '减重速度放缓', '减重趋势有所减弱', '减重进展趋于平稳', '减重效果逐渐稳定'
-        ],
-        stable: [
-            '减重过程保持稳定', '减重趋势平稳', '减重进展持续稳定', '减重效果维持稳定'
-        ]
-    };
     
     // 选择合适的术语
     let weightTerm, fatRateTerm, trendTerm;
@@ -792,6 +642,21 @@ function updateHealthSummary() {
     }
     
     summaryText += `</p>`;
+    
+    return summaryText;
+}
+
+// 更新健康分析摘要
+function updateHealthSummary() {
+    if (rawData.length === 0) return;
+    
+    // 按日期排序
+    const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const firstData = sortedData[0];
+    const lastData = sortedData[sortedData.length - 1];
+    
+    // 生成摘要内容
+    const summaryText = generateHealthSummaryText(firstData, lastData);
     
     // 找到图表元素之后的 summary 元素，并更新其内容
     const chartElement = document.getElementById('chart');
@@ -854,12 +719,12 @@ function updateChartByPeriod(period) {
     updateHealthSummaryForPeriod(filteredData);
 }
 
-// 根据时间范围更新指标卡片
-function updateMetricsForPeriod(filteredData) {
-    if (filteredData.length === 0) return;
+// 更新指标卡片
+function updateMetricsForPeriod(data) {
+    if (data.length === 0) return;
     
     // 按日期排序
-    const sortedData = [...filteredData].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
     const firstData = sortedData[0];
     const lastData = sortedData[sortedData.length - 1];
     
@@ -904,6 +769,12 @@ function updateMetricsForPeriod(filteredData) {
     }
 }
 
+// 更新指标卡片
+function updateMetrics() {
+    if (rawData.length === 0) return;
+    updateMetricsForPeriod(rawData);
+}
+
 // 根据时间范围更新健康分析摘要
 function updateHealthSummaryForPeriod(filteredData) {
     if (filteredData.length === 0) return;
@@ -913,136 +784,8 @@ function updateHealthSummaryForPeriod(filteredData) {
     const firstData = sortedData[0];
     const lastData = sortedData[sortedData.length - 1];
     
-    // 计算体重变化和体脂率变化
-    const weightChange = lastData.weight - firstData.weight;
-    const fatRateChange = (lastData.fatRate && firstData.fatRate) ? (lastData.fatRate - firstData.fatRate) : null;
-    const weightChangePercent = ((weightChange / firstData.weight) * 100).toFixed(1);
-    
-    // 格式化日期
-    const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${year}年${month}月${day}日`;
-    };
-    
-    // 术语库
-    const weightChangeTerms = {
-        significantLoss: [
-            '成功减重', '取得了显著的减重效果', '减重成效明显', '减重表现出色'
-        ],
-        slightLoss: [
-            '体重略有下降', '体重呈现下降趋势', '减重进展平稳', '体重缓慢下降'
-        ],
-        significantGain: [
-            '体重有所增加', '体重呈现上升趋势', '体重有所上涨', '体重上升明显'
-        ],
-        slightGain: [
-            '体重略有上升', '体重小幅增加', '体重缓慢上升', '体重稍有增加'
-        ],
-        stable: [
-            '体重保持稳定', '体重变化不大', '体重维持在稳定水平', '体重基本不变'
-        ]
-    };
-    
-    const fatRateTerms = {
-        significantLoss: [
-            '体脂率明显下降', '体脂率降低显著', '体脂率减少明显', '体脂率下降较快'
-        ],
-        slightLoss: [
-            '体脂率略有下降', '体脂率缓慢降低', '体脂率呈现下降趋势', '体脂率小幅减少'
-        ],
-        significantGain: [
-            '体脂率有所上升', '体脂率呈现上升趋势', '体脂率增加明显', '体脂率上升较快'
-        ],
-        slightGain: [
-            '体脂率略有上升', '体脂率小幅增加', '体脂率缓慢上升', '体脂率稍有增加'
-        ],
-        stable: [
-            '体脂率保持稳定', '体脂率变化不大', '体脂率维持在稳定水平', '体脂率基本不变'
-        ]
-    };
-    
-    const trendTerms = {
-        accelerating: [
-            '减重速度加快', '减重趋势明显增强', '减重势头良好', '减重效果进一步提升'
-        ],
-        decelerating: [
-            '减重速度放缓', '减重趋势有所减弱', '减重进展趋于平稳', '减重效果逐渐稳定'
-        ],
-        stable: [
-            '减重过程保持稳定', '减重趋势平稳', '减重进展持续稳定', '减重效果维持稳定'
-        ]
-    };
-    
-    // 选择合适的术语
-    let weightTerm, fatRateTerm, trendTerm;
-    
-    // 体重变化术语选择
-    if (Math.abs(parseFloat(weightChangePercent)) > 5) {
-        weightTerm = weightChange < 0 ? 
-            weightChangeTerms.significantLoss[Math.floor(Math.random() * weightChangeTerms.significantLoss.length)] :
-            weightChangeTerms.significantGain[Math.floor(Math.random() * weightChangeTerms.significantGain.length)];
-    } else if (Math.abs(parseFloat(weightChangePercent)) > 1) {
-        weightTerm = weightChange < 0 ? 
-            weightChangeTerms.slightLoss[Math.floor(Math.random() * weightChangeTerms.slightLoss.length)] :
-            weightChangeTerms.slightGain[Math.floor(Math.random() * weightChangeTerms.slightGain.length)];
-    } else {
-        weightTerm = weightChangeTerms.stable[Math.floor(Math.random() * weightChangeTerms.stable.length)];
-    }
-    
-    // 体脂率变化术语选择
-    if (fatRateChange !== null) {
-        const fatRateChangePercent = ((fatRateChange / firstData.fatRate) * 100).toFixed(1);
-        if (Math.abs(parseFloat(fatRateChangePercent)) > 5) {
-            fatRateTerm = fatRateChange < 0 ? 
-                fatRateTerms.significantLoss[Math.floor(Math.random() * fatRateTerms.significantLoss.length)] :
-                fatRateTerms.significantGain[Math.floor(Math.random() * fatRateTerms.significantGain.length)];
-        } else if (Math.abs(parseFloat(fatRateChangePercent)) > 1) {
-            fatRateTerm = fatRateChange < 0 ? 
-                fatRateTerms.slightLoss[Math.floor(Math.random() * fatRateTerms.slightLoss.length)] :
-                fatRateTerms.slightGain[Math.floor(Math.random() * fatRateTerms.slightGain.length)];
-        } else {
-            fatRateTerm = fatRateTerms.stable[Math.floor(Math.random() * fatRateTerms.stable.length)];
-        }
-    } else {
-        fatRateTerm = '体脂率数据不完整';
-    }
-    
-    // 趋势术语选择
-    trendTerm = trendTerms.stable[Math.floor(Math.random() * trendTerms.stable.length)];
-    
     // 生成摘要内容
-    let summaryText = `<p>根据您的体重变化数据，从${formatDate(firstData.date)}至${formatDate(lastData.date)}，您的体重${weightTerm}`;
-    
-    if (Math.abs(weightChange) > 0.1) {
-        summaryText += `，${weightChange > 0 ? '增加' : '下降'}了${Math.abs(weightChange).toFixed(1)}斤`;
-    }
-    
-    summaryText += `。`;
-    
-    if (fatRateChange !== null && Math.abs(fatRateChange) > 0.1) {
-        summaryText += ` 同时，您的${fatRateTerm}，从${firstData.fatRate}%${fatRateChange > 0 ? '上升' : '下降'}到${lastData.fatRate}%`;
-    }
-    
-    summaryText += `</p>`;
-    
-    // 添加第二条摘要
-    summaryText += `<p>您的${trendTerm}。`;
-    
-    // 根据情况添加建议
-    if (weightChange < 0 && fatRateChange && fatRateChange < 0) {
-        summaryText += ` 这是一个非常积极的趋势，建议继续保持当前的健康管理方式。`;
-    } else if (weightChange < 0 && fatRateChange && fatRateChange > 0) {
-        summaryText += ` 值得注意的是，体脂率有所上升，建议适当增加力量训练，以提高肌肉比例。`;
-    } else if (weightChange > 0) {
-        summaryText += ` 建议关注饮食结构和运动习惯，保持健康的生活方式。`;
-    } else {
-        summaryText += ` 建议继续保持良好的健康管理习惯。`;
-    }
-    
-    summaryText += `</p>`;
+    const summaryText = generateHealthSummaryText(firstData, lastData);
     
     // 找到图表元素之后的 summary 元素，并更新其内容
     const chartElement = document.getElementById('chart');
