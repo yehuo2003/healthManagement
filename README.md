@@ -32,20 +32,37 @@
 ## 技术栈
 
 - **前端框架**：原生HTML5 + CSS3 + JavaScript
+- **构建工具**：Vite
+- **包管理器**：npm
 - **图表库**：ECharts 5.4.3
+- **PDF生成**：jsPDF
+- **图片生成**：html2canvas
 - **数据存储**：localStorage
 - **数据格式**：JSON
-- **开发工具**：任何文本编辑器
+- **开发工具**：任何文本编辑器 + Vite开发服务器
 
 ## 快速开始
 
-### 方法一：直接打开
+### 方法一：使用npm和Vite（推荐）
+
+1. 下载或克隆项目到本地
+2. 安装项目依赖
+   ```bash
+   npm install
+   ```
+3. 启动开发服务器
+   ```bash
+   npm run dev
+   ```
+4. 在浏览器中访问命令输出的地址（通常是 `http://localhost:5173`）
+
+### 方法二：直接打开
 
 1. 下载或克隆项目到本地
 2. 直接在浏览器中打开 `index.html` 文件
-3. 系统会自动从 `data.json` 加载初始数据
+3. 系统会自动从 `static/data.json` 加载初始数据
 
-### 方法二：本地服务器（推荐）
+### 方法三：本地服务器
 
 1. 下载或克隆项目到本地
 2. 在项目目录启动本地服务器
@@ -65,9 +82,40 @@
 
 ```
 healthManagement/
+├── src/                # 源代码目录
+│   ├── data/           # 数据管理模块
+│   │   ├── dataLoader.js      # 数据加载和保存
+│   │   ├── dataCalculator.js  # 数据计算和衍生指标
+│   │   ├── dataStorage.js     # 本地存储管理
+│   │   └── index.js           # 数据管理主模块
+│   ├── chart/          # 图表模块
+│   │   ├── chartConfig.js     # 图表配置
+│   │   ├── chartEvents.js     # 图表事件处理
+│   │   └── index.js           # 图表管理主模块
+│   ├── modal/          # 模态框模块
+│   │   ├── personalInfoModal.js  # 个人基础信息模态框
+│   │   ├── healthDataModal.js     # 健康数据录入模态框
+│   │   ├── dataComparisonModal.js # 健康数据比对模态框
+│   │   └── index.js               # 模态框管理主模块
+│   ├── utils/          # 工具函数模块
+│   │   ├── healthGoalUtils.js     # 健康目标管理工具
+│   │   └── healthReportUtils.js   # 健康报告生成工具
+│   ├── config/         # 配置模块
+│   │   ├── healthMetricsConfig.js # 健康数据指标配置
+│   │   ├── levelColorsConfig.js   # 等级颜色映射配置
+│   │   ├── chartMetricsConfig.js  # 图表指标配置
+│   │   ├── storageConfig.js       # 存储键名配置
+│   │   └── index.js                # 配置管理主模块
+│   ├── styles/         # 样式模块
+│   │   └── main.css    # 主样式文件
+│   ├── components/     # 组件目录（预留）
+│   └── main.js         # 主应用文件
+├── static/             # 静态资源目录
+│   └── data.json       # 健康数据文件
+├── test/               # 测试目录（预留）
 ├── index.html          # 主页面文件
-├── data.json           # 健康数据文件
-├── echarts.js          # ECharts图表库
+├── package.json        # 项目配置文件
+├── package-lock.json   # 依赖锁文件
 ├── README.md           # 项目说明文件
 └── .gitignore          # Git忽略文件
 ```
