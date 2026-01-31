@@ -231,10 +231,12 @@ export function calculateBloodPressureLevel(systolic, diastolic) {
 export function calculateBMILevel(bmi) {
     if (!bmi) return 'N/A';
     const bmiNum = parseFloat(bmi);
-    if (bmiNum < 18.5) return '偏瘦';
-    if (bmiNum >= 18.5 && bmiNum <= 23.9) return '正常';
-    if (bmiNum >= 24.0 && bmiNum <= 27.9) return '超重';
-    return '肥胖';
+    if (bmiNum < 19) return '消瘦';
+    if (bmiNum >= 19 && bmiNum < 21) return '偏瘦';
+    if (bmiNum >= 21 && bmiNum < 24) return '标准';
+    if (bmiNum >= 24 && bmiNum < 25.5) return '偏胖';
+    if (bmiNum >= 25.5 && bmiNum < 30.8) return '肥胖';
+    return '重度';
 }
 
 /**
@@ -286,22 +288,15 @@ export function calculateWeightLevel(weight, height, gender) {
  * @returns {string} 体脂率风险等级
  */
 export function calculateFatRateLevel(fatRate, gender) {
-    if (!fatRate || !gender) return 'N/A';
+    if (!fatRate) return 'N/A';
     
     const fatRateNum = parseFloat(fatRate);
     
-    // 体脂率正常范围参考值
-    if (gender === 'male') {
-        if (fatRateNum < 10) return '偏瘦';
-        if (fatRateNum >= 10 && fatRateNum <= 20) return '正常';
-        if (fatRateNum > 20 && fatRateNum <= 25) return '超重';
-        return '肥胖';
-    } else {
-        if (fatRateNum < 15) return '偏瘦';
-        if (fatRateNum >= 15 && fatRateNum <= 25) return '正常';
-        if (fatRateNum > 25 && fatRateNum <= 30) return '超重';
-        return '肥胖';
-    }
+    // 新的体脂率等级区分标准
+    if (fatRateNum < 20.9) return '偏瘦';
+    if (fatRateNum >= 20.9 && fatRateNum <= 26.1) return '标准';
+    if (fatRateNum > 26.1 && fatRateNum <= 30.8) return '偏高';
+    return '超高';
 }
 
 /**

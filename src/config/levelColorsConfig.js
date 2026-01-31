@@ -1,3 +1,12 @@
+/*
+ * @Author: LinZhuMing
+ * @Date: 2026-01-31 14:40:08
+ * @LastEditors: LinZhuMing
+ * @LastEditTime: 2026-01-31 18:04:36
+ * @FilePath: \healthManagement\src\config\levelColorsConfig.js
+ * @Description: 
+ * 
+ */
 // 等级颜色映射配置
 
 /**
@@ -6,7 +15,7 @@
  */
 export const levelColors = {
     // BMI等级
-    '偏瘦': '#f39c12', // 黄色
+    '偏瘦': '#3498db', // 蓝色
     '正常': '#27ae60', // 绿色
     '超重': '#f39c12', // 黄色
     '肥胖': '#e74c3c', // 红色
@@ -28,7 +37,7 @@ export const levelColors = {
     
     // 肥胖度等级
     '消瘦': '#7f8c8d', // 灰色
-    '偏瘦': '#f39c12', // 黄色
+    '偏瘦': '#3498db', // 蓝色
     '标准': '#27ae60', // 绿色
     '偏胖': '#f39c12', // 黄色
     '肥胖': '#e74c3c', // 红色
@@ -37,5 +46,8 @@ export const levelColors = {
     // 蛋白质等级
     '不足': '#e74c3c', // 红色
     '标准': '#27ae60', // 绿色
-    '优': '#3498db' // 蓝色
+    '优': '#3498db', // 蓝色
+    
+    // 体脂率等级
+    '超高': '#e74c3c' // 红色
 };

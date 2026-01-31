@@ -26,7 +26,12 @@ export function calculateTrends(rawData, timeRange) {
     const trends = {
         weight: calculateMetricTrend(filteredData, 'weight'),
         fatRate: calculateMetricTrend(filteredData, 'fatRate'),
-        muscleMass: calculateMetricTrend(filteredData, 'muscleMass')
+        muscleMass: calculateMetricTrend(filteredData, 'muscleMass'),
+        waterRate: calculateMetricTrend(filteredData, 'waterRate'),
+        protein: calculateMetricTrend(filteredData, 'protein'),
+        visceralFat: calculateMetricTrend(filteredData, 'visceralFat'),
+        waist: calculateMetricTrend(filteredData, 'waist'),
+        hip: calculateMetricTrend(filteredData, 'hip')
     };
     
     return trends;
@@ -108,6 +113,36 @@ export function generateHealthAdvice(riskLevels) {
 export function generateReportData(reportType, timeRange, rawData, userInfo, healthGoals, calculateBMILevel, calculateFatRateLevel, calculateWeightLevel, calculateVisceralFatLevel, calculateBMI) {
     const trends = calculateTrends(rawData, timeRange);
     const latestData = [...rawData].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    
+    // 确保BMI值存在
+    if (!latestData.bmi && latestData.weight && userInfo.height) {
+        latestData.bmi = calculateBMI(latestData.weight, userInfo.height);
+    }
+    
+    // 计算具体的时间范围
+    let filteredData = rawData;
+    if (timeRange !== 'all') {
+        const now = new Date();
+        let months = 0;
+        switch (timeRange) {
+            case '1month': months = 1; break;
+            case '3months': months = 3; break;
+            case '6months': months = 6; break;
+            case '1year': months = 12; break;
+        }
+        const startTime = new Date(now.setMonth(now.getMonth() - months));
+        filteredData = rawData.filter(item => new Date(item.date) >= startTime);
+    }
+    
+    // 计算时间范围的开始和结束日期
+    let startDate = '';
+    let endDate = '';
+    if (filteredData.length > 0) {
+        const sortedData = [...filteredData].sort((a, b) => new Date(a.date) - new Date(b.date));
+        startDate = sortedData[0].date;
+        endDate = sortedData[sortedData.length - 1].date;
+    }
+    
     const riskLevels = {
         bmi: calculateBMILevel(latestData.bmi || calculateBMI(latestData.weight, userInfo.height)),
         fatRate: calculateFatRateLevel(latestData.fatRate, userInfo.gender),
@@ -119,6 +154,8 @@ export function generateReportData(reportType, timeRange, rawData, userInfo, hea
     return {
         reportType: reportType,
         timeRange: timeRange,
+        startDate: startDate,
+        endDate: endDate,
         generatedAt: new Date().toISOString(),
         userInfo: userInfo,
         latestData: latestData,
@@ -194,27 +231,58 @@ function renderReportHeader(reportData) {
  */
 function renderDataOverview(reportData) {
     const latestData = reportData.latestData;
+    const riskLevels = reportData.riskLevels;
+    
+    // 定义等级颜色映射
+    const levelColors = {
+        '偏瘦': '#3498db', // 蓝色
+        '标准': '#27ae60', // 绿色
+        '偏高': '#f39c12', // 黄色
+        '超高': '#e74c3c', // 红色
+        '消瘦': '#7f8c8d', // 灰色
+        '正常': '#27ae60', // 绿色
+        '偏胖': '#f39c12', // 黄色
+        '肥胖': '#e74c3c', // 红色
+        '重度': '#c0392b', // 深红色
+        '不足': '#e74c3c', // 红色
+        '优': '#3498db' // 蓝色
+    };
+    
+    // 准备所有指标
+    const metrics = [
+        { key: 'weight', label: '体重', unit: '斤', value: latestData.weight, level: riskLevels.weight },
+        { key: 'fatRate', label: '体脂率', unit: '%', value: latestData.fatRate, level: riskLevels.fatRate },
+        { key: 'bmi', label: 'BMI', unit: '', value: latestData.bmi, level: riskLevels.bmi },
+        { key: 'muscleMass', label: '肌肉量', unit: 'kg', value: latestData.muscleMass },
+        { key: 'waterRate', label: '水分率', unit: '%', value: latestData.waterRate },
+        { key: 'protein', label: '蛋白质', unit: '%', value: latestData.protein },
+        { key: 'visceralFat', label: '内脏脂肪', unit: '', value: latestData.visceralFat, level: riskLevels.visceralFat },
+        { key: 'boneMass', label: '骨量', unit: 'kg', value: latestData.boneMass },
+        { key: 'waist', label: '腰围', unit: 'cm', value: latestData.waist },
+        { key: 'hip', label: '臀围', unit: 'cm', value: latestData.hip },
+        { key: 'systolic', label: '收缩压', unit: 'mmHg', value: latestData.systolic },
+        { key: 'diastolic', label: '舒张压', unit: 'mmHg', value: latestData.diastolic },
+        { key: 'heartRate', label: '心率', unit: '次/分', value: latestData.heartRate }
+    ];
+    
+    // 过滤出有值的指标
+    const validMetrics = metrics.filter(metric => metric.value !== undefined && metric.value !== null);
     
     return `
         <div style="margin-bottom: 30px;">
             <h3 style="color: #2c3e50; margin-bottom: 20px;">数据概览</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #3498db;">体重</h4>
-                    <p style="font-size: 24px; font-weight: bold; margin: 0;">${latestData.weight}斤</p>
-                </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #3498db;">体脂率</h4>
-                    <p style="font-size: 24px; font-weight: bold; margin: 0;">${latestData.fatRate}%</p>
-                </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #3498db;">BMI</h4>
-                    <p style="font-size: 24px; font-weight: bold; margin: 0;">${latestData.bmi}</p>
-                </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #3498db;">肌肉量</h4>
-                    <p style="font-size: 24px; font-weight: bold; margin: 0;">${latestData.muscleMass}kg</p>
-                </div>
+                ${validMetrics.map(metric => {
+                    const level = metric.level;
+                    const valueColor = level ? (levelColors[level] || '#2c3e50') : '#2c3e50';
+                    return `
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                            <h4 style="margin: 0 0 10px 0; color: #3498db;">${metric.label}</h4>
+                            <p style="font-size: 24px; font-weight: bold; margin: 0; color: ${valueColor};">${metric.value}${metric.unit}</p>
+                            ${level ? `<p style="font-size: 14px; margin: 5px 0 0 0; color: ${valueColor};">${level}</p>` : ''}
+                        </div>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
@@ -227,19 +295,48 @@ function renderDataOverview(reportData) {
  */
 function renderTrendAnalysis(reportData) {
     const trends = reportData.trends;
+    const startDate = reportData.startDate;
+    const endDate = reportData.endDate;
+    
+    // 格式化日期为中文格式
+    function formatDate(dateStr) {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
+    }
+    
+    const formattedStartDate = formatDate(startDate);
+    const formattedEndDate = formatDate(endDate);
+    
+    // 准备趋势分析项
+    const trendItems = [
+        { key: 'weight', label: '体重', unit: '斤', trends: trends.weight },
+        { key: 'fatRate', label: '体脂率', unit: '%', trends: trends.fatRate },
+        { key: 'muscleMass', label: '肌肉量', unit: 'kg', trends: trends.muscleMass },
+        { key: 'waterRate', label: '水分率', unit: '%', trends: trends.waterRate },
+        { key: 'protein', label: '蛋白质', unit: '%', trends: trends.protein },
+        { key: 'visceralFat', label: '内脏脂肪', unit: '', trends: trends.visceralFat },
+        { key: 'waist', label: '腰围', unit: 'cm', trends: trends.waist },
+        { key: 'hip', label: '臀围', unit: 'cm', trends: trends.hip }
+    ];
+    
+    // 过滤出有有效数据的趋势项
+    const validTrendItems = trendItems.filter(item => item.trends.data.length > 0 && item.trends.start !== 0);
     
     return `
         <div style="margin-bottom: 30px;">
             <h3 style="color: #2c3e50; margin-bottom: 20px;">趋势分析</h3>
             <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <h4 style="margin: 0 0 15px 0; color: #3498db;">体重变化趋势</h4>
-                <p>从 ${trends.weight.start} 斤到 ${trends.weight.end} 斤，${trends.weight.change > 0 ? '增加了' : '减少了'} ${Math.abs(trends.weight.change).toFixed(1)} 斤</p>
-                
-                <h4 style="margin: 15px 0; color: #3498db;">体脂率变化趋势</h4>
-                <p>从 ${trends.fatRate.start}% 到 ${trends.fatRate.end}%，${trends.fatRate.change > 0 ? '增加了' : '减少了'} ${Math.abs(trends.fatRate.change).toFixed(1)}%</p>
-                
-                <h4 style="margin: 15px 0; color: #3498db;">肌肉量变化趋势</h4>
-                <p>从 ${trends.muscleMass.start}kg 到 ${trends.muscleMass.end}kg，${trends.muscleMass.change > 0 ? '增加了' : '减少了'} ${Math.abs(trends.muscleMass.change).toFixed(1)}kg</p>
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+                    <h4 style="margin: 0; color: #3498db;">分析时间范围</h4>
+                    <p style="margin: 5px 0 0 0;">${formattedStartDate} - ${formattedEndDate}</p>
+                </div>
+                ${validTrendItems.map((item, index) => `
+                    <div style="margin-bottom: ${index < validTrendItems.length - 1 ? '20px' : '0'};">
+                        <h4 style="margin: 0 0 10px 0; color: #3498db;">${item.label}变化趋势</h4>
+                        <p>从 ${item.trends.start}${item.unit} 到 ${item.trends.end}${item.unit}，${item.trends.change > 0 ? '增加了' : '减少了'} ${Math.abs(item.trends.change).toFixed(1)} ${item.unit}</p>
+                    </div>
+                `).join('')}
             </div>
         </div>
     `;
