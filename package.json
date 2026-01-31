@@ -2,9 +2,10 @@
   "name": "healthmanagement",
   "version": "1.0.0",
   "description": "健康管理系统是一个专为个人健康数据追踪和分析设计的单页应用，帮助用户记录、分析和管理各项健康指标，包括体重、体脂率、肌肉量、蛋白质等，通过数据可视化和风险等级评估，为用户提供直观的健康状况分析。",
+  "type": "module",
   "main": "echarts.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -26,6 +27,10 @@
     "jspdf": "^4.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.6",
+    "@babel/preset-env": "^7.28.6",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
     "vite": "^7.3.1"
   }
 }
