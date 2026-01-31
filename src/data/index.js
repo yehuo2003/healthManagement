@@ -15,9 +15,11 @@ export {
 };
 
 // 直接导出常用函数
-export * from './dataLoader.js';
 export * from './dataCalculator.js';
-export * from './dataStorage.js';
+// 明确导出存储相关函数，避免命名冲突
+export { saveUserInfo, getUserInfo, saveHealthData, getHealthData, saveHealthGoals, getHealthGoals } from './dataStorage.js';
+// 导出数据加载函数
+export { loadInitialData, loadUserInfo as loadStoredUserInfo, loadHealthGoals as loadStoredHealthGoals, saveData } from './dataLoader.js';
 
 /**
  * 初始化数据
@@ -25,10 +27,10 @@ export * from './dataStorage.js';
  */
 export async function initData() {
     // 加载用户基础信息
-    const userInfo = dataLoader.loadUserInfo();
+    const userInfo = dataStorage.getUserInfo();
 
     // 加载健康目标数据
-    const healthGoals = dataLoader.loadHealthGoals();
+    const healthGoals = dataStorage.getHealthGoals();
 
     // 从JSON文件加载最新数据，确保用户修改后能看到更新
     let rawData = [];

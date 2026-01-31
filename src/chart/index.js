@@ -1,3 +1,12 @@
+/*
+ * @Author: LinZhuMing
+ * @Date: 2026-01-31 14:31:34
+ * @LastEditors: LinZhuMing
+ * @LastEditTime: 2026-01-31 15:27:33
+ * @FilePath: \healthManagement\src\chart\index.js
+ * @Description: 
+ * 
+ */
 // 图表管理主模块
 
 import * as echarts from 'echarts';
@@ -84,6 +93,9 @@ export function updateChart(myChart, rawData, currentMetrics, chartMetrics, user
     
     // 渲染图表，使用notMerge: true确保完全替换旧配置
     option && myChart.setOption(option, true);
+    
+    // 返回图表实例
+    return myChart;
 }
 
 

@@ -13,6 +13,10 @@ export function openDataComparisonModal(toggleSettingsMenu, initDateSelectors) {
     toggleSettingsMenu();
     // 清空之前的比对结果
     document.getElementById('comparisonResult').innerHTML = '';
+    // 初始化日期选择器
+    if (typeof initDateSelectors === 'function') {
+        initDateSelectors();
+    }
     // 显示模态框
     document.getElementById('dataComparisonModal').style.display = 'block';
 }

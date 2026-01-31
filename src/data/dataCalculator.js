@@ -208,3 +208,131 @@ export function calculateMissingMetrics(dataItem, userInfo) {
     
     return enhancedItem;
 }
+
+/**
+ * 计算血压风险等级
+ * @param {number} systolic 收缩压
+ * @param {number} diastolic 舒张压
+ * @returns {string} 血压风险等级
+ */
+export function calculateBloodPressureLevel(systolic, diastolic) {
+    if (!systolic || !diastolic) return 'N/A';
+    if (systolic < 120 && diastolic < 80) return '正常';
+    if (systolic >= 120 && systolic <= 139 || diastolic >= 80 && diastolic <= 89) return '高血压前期';
+    if (systolic >= 140 && systolic <= 159 || diastolic >= 90 && diastolic <= 99) return '高血压1级';
+    return '高血压2级';
+}
+
+/**
+ * 计算BMI风险等级
+ * @param {number|string} bmi BMI值
+ * @returns {string} BMI风险等级
+ */
+export function calculateBMILevel(bmi) {
+    if (!bmi) return 'N/A';
+    const bmiNum = parseFloat(bmi);
+    if (bmiNum < 18.5) return '偏瘦';
+    if (bmiNum >= 18.5 && bmiNum <= 23.9) return '正常';
+    if (bmiNum >= 24.0 && bmiNum <= 27.9) return '超重';
+    return '肥胖';
+}
+
+/**
+ * 计算腰臀比风险等级
+ * @param {number|string} whr 腰臀比
+ * @param {string} gender 性别
+ * @returns {string} 腰臀比风险等级
+ */
+export function calculateWHRLevel(whr, gender) {
+    if (!whr || !gender) return 'N/A';
+    const whrNum = parseFloat(whr);
+    if (gender === 'male' && whrNum < 0.90 || gender === 'female' && whrNum < 0.85) return '正常';
+    return '中心性肥胖';
+}
+
+/**
+ * 计算内脏脂肪风险等级
+ * @param {number} visceralFat 内脏脂肪等级
+ * @returns {string} 内脏脂肪风险等级
+ */
+export function calculateVisceralFatLevel(visceralFat) {
+    if (!visceralFat) return 'N/A';
+    if (visceralFat < 10) return '正常';
+    if (visceralFat >= 10 && visceralFat <= 14) return '偏高';
+    return '肥胖';
+}
+
+/**
+ * 计算体重风险等级
+ * @param {number} weight 体重（斤）
+ * @param {number} height 身高（厘米）
+ * @param {string} gender 性别
+ * @returns {string} 体重风险等级
+ */
+export function calculateWeightLevel(weight, height, gender) {
+    if (!weight || !height || !gender) return 'N/A';
+    
+    // 计算BMI来判断体重是否正常
+    const bmi = calculateBMI(weight, height);
+    if (!bmi) return 'N/A';
+    
+    return calculateBMILevel(bmi);
+}
+
+/**
+ * 计算体脂率风险等级
+ * @param {number|string} fatRate 体脂率（%）
+ * @param {string} gender 性别
+ * @returns {string} 体脂率风险等级
+ */
+export function calculateFatRateLevel(fatRate, gender) {
+    if (!fatRate || !gender) return 'N/A';
+    
+    const fatRateNum = parseFloat(fatRate);
+    
+    // 体脂率正常范围参考值
+    if (gender === 'male') {
+        if (fatRateNum < 10) return '偏瘦';
+        if (fatRateNum >= 10 && fatRateNum <= 20) return '正常';
+        if (fatRateNum > 20 && fatRateNum <= 25) return '超重';
+        return '肥胖';
+    } else {
+        if (fatRateNum < 15) return '偏瘦';
+        if (fatRateNum >= 15 && fatRateNum <= 25) return '正常';
+        if (fatRateNum > 25 && fatRateNum <= 30) return '超重';
+        return '肥胖';
+    }
+}
+
+/**
+ * 计算肥胖度风险等级
+ * @param {number|string} obesityDegree 肥胖度（%）
+ * @returns {string} 肥胖度风险等级
+ */
+export function calculateObesityDegreeLevel(obesityDegree) {
+    if (!obesityDegree) return 'N/A';
+    
+    const degreeNum = parseFloat(obesityDegree);
+    
+    if (degreeNum < -20.0) return '消瘦';
+    if (degreeNum >= -20.0 && degreeNum < -10.0) return '偏瘦';
+    if (degreeNum >= -10.0 && degreeNum <= 10.0) return '标准';
+    if (degreeNum > 10.0 && degreeNum <= 20.0) return '偏胖';
+    if (degreeNum > 20.0 && degreeNum <= 50.0) return '肥胖';
+    return '重度';
+}
+
+/**
+ * 计算蛋白质风险等级
+ * @param {number|string} protein 蛋白质（%）
+ * @returns {string} 蛋白质风险等级
+ */
+export function calculateProteinLevel(protein) {
+    if (!protein) return 'N/A';
+    
+    const proteinNum = parseFloat(protein);
+    
+    if (proteinNum < 16.0) return '不足';
+    if (proteinNum >= 16.0 && proteinNum <= 20.0) return '标准';
+    return '优';
+}
