@@ -112,19 +112,37 @@ window.compareHealthData = function() {
     modalManager.compareHealthData(rawData, userInfo, healthMetricsConfig, levelColors);
 };
 
+// 根据出生年月日计算年龄
+function calculateAge(birthdate) {
+    if (!birthdate) return 0;
+    
+    const today = new Date();
+    const birthDate = new Date(birthdate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    
+    return age;
+}
+
 // 个人基础信息相关函数
 window.saveUserInfo = function() {
     const height = parseFloat(document.getElementById('userHeight').value);
-    const age = parseInt(document.getElementById('userAge').value);
+    const birthdate = document.getElementById('userBirthdate').value;
     const gender = document.getElementById('userGender').value;
     const activityLevel = parseFloat(document.getElementById('userActivityLevel').value);
 
-    if (isNaN(height) || isNaN(age)) {
-        alert('请填写有效的身高和年龄');
+    if (isNaN(height) || !birthdate) {
+        alert('请填写有效的身高和出生年月日');
         return;
     }
 
-    userInfo = { height, age, gender, activityLevel };
+    const age = calculateAge(birthdate);
+    
+    userInfo = { height, age, birthdate, gender, activityLevel };
     dataManager.saveUserInfo(userInfo);
     
     // 重新计算所有数据的衍生指标
