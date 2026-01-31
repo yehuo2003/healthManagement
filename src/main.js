@@ -150,21 +150,21 @@ async function initData() {
     }
 
     // 从JSON文件加载最新数据，确保用户修改后能看到更新
-    try {
-        const response = await fetch('./data.json');
-        rawData = await response.json();
-        // 保存到localStorage
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
-    } catch (error) {
-        console.error('Failed to load initial data:', error);
-        // 如果从JSON文件加载失败，尝试从localStorage加载
-        const storedData = localStorage.getItem(STORAGE_KEY);
-        if (storedData) {
-            rawData = JSON.parse(storedData);
-        } else {
-            rawData = [];
+        try {
+            const response = await fetch('./static/data.json');
+            rawData = await response.json();
+            // 保存到localStorage
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(rawData));
+        } catch (error) {
+            console.error('Failed to load initial data:', error);
+            // 如果从JSON文件加载失败，尝试从localStorage加载
+            const storedData = localStorage.getItem(STORAGE_KEY);
+            if (storedData) {
+                rawData = JSON.parse(storedData);
+            } else {
+                rawData = [];
+            }
         }
-    }
     
     // 渲染指标选择器
     renderMetricSelector();
