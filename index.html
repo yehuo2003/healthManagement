@@ -22,6 +22,7 @@
                     <a href="#" onclick="openHealthDataModal()">健康数据录入</a>
                     <a href="#" onclick="openDataComparisonModal()">健康数据比对</a>
                     <a href="#" onclick="openHealthGoalModal()">健康目标管理</a>
+                    <a href="#" onclick="openHealthReportModal()">健康报告生成</a>
                 </div>
             </div>
         </div>
@@ -267,6 +268,63 @@
                     <div id="goalList" style="margin-top: 15px;">
                         <!-- 目标列表将通过JavaScript动态生成 -->
                         <div style="text-align: center; color: #7f8c8d; padding: 20px;">暂无设置的目标</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 健康报告生成模态框 -->
+    <div id="healthReportModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>健康报告生成</h3>
+                <button class="close-button" onclick="closeHealthReportModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 报告配置区域 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>报告配置</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="reportType">报告类型</label>
+                            <select id="reportType" style="padding: 8px;">
+                                <option value="comprehensive">综合报告</option>
+                                <option value="weight">体重管理报告</option>
+                                <option value="fat">体脂管理报告</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="reportTimeRange">时间范围</label>
+                            <select id="reportTimeRange" style="padding: 8px;">
+                                <option value="1month">近1个月</option>
+                                <option value="3months">近3个月</option>
+                                <option value="6months">近6个月</option>
+                                <option value="1year">近1年</option>
+                                <option value="all">全部时间</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button onclick="generateReport()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">生成报告</button>
+                    </div>
+                </div>
+                
+                <!-- 报告预览区域 -->
+                <div style="margin-bottom: 30px;">
+                    <h4>报告预览</h4>
+                    <div id="reportPreview" style="margin-top: 15px; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; min-height: 400px;">
+                        <div style="text-align: center; color: #7f8c8d; padding: 40px;">点击"生成报告"按钮生成报告预览</div>
+                    </div>
+                </div>
+                
+                <!-- 导出选项区域 -->
+                <div>
+                    <h4>导出选项</h4>
+                    <div style="display: flex; gap: 15px; margin-top: 15px;">
+                        <button onclick="exportAsImage()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为图片</button>
+                        <button onclick="exportAsPDF()" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为PDF</button>
+                        <button onclick="copyToClipboard()" style="padding: 10px 20px; background: #9b59b6; color: white; border: none; border-radius: 4px; cursor: pointer;">复制到剪贴板</button>
                     </div>
                 </div>
             </div>

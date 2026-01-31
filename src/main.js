@@ -852,6 +852,106 @@ function generateReport() {
     document.getElementById('reportPreview').innerHTML = reportHTML;
 }
 
+// 导出为图片
+function exportAsImage() {
+    const reportElement = document.getElementById('reportPreview');
+    if (!reportElement || reportElement.innerHTML.includes('点击"生成报告"按钮生成报告预览')) {
+        alert('请先生成报告');
+        return;
+    }
+    
+    html2canvas(reportElement, {
+        scale: 2, // 提高清晰度
+        useCORS: true, // 允许加载跨域图片
+        logging: false
+    }).then(canvas => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `健康报告_${new Date().toISOString().split('T')[0]}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    });
+}
+
+// 导出为PDF
+function exportAsPDF() {
+    const reportElement = document.getElementById('reportPreview');
+    if (!reportElement || reportElement.innerHTML.includes('点击"生成报告"按钮生成报告预览')) {
+        alert('请先生成报告');
+        return;
+    }
+    
+    html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const pageHeight = 297;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        pdf.save(`健康报告_${new Date().toISOString().split('T')[0]}.pdf`);
+    });
+}
+
+// 复制到剪贴板
+function copyToClipboard() {
+    const reportElement = document.getElementById('reportPreview');
+    if (!reportElement || reportElement.innerHTML.includes('点击"生成报告"按钮生成报告预览')) {
+        alert('请先生成报告');
+        return;
+    }
+    
+    html2canvas(reportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+    }).then(canvas => {
+        canvas.toBlob(blob => {
+            try {
+                navigator.clipboard.write([
+                    new ClipboardItem({
+                        'image/png': blob
+                    })
+                ]).then(() => {
+                    alert('报告已复制到剪贴板');
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动截图');
+                });
+            } catch (e) {
+                alert('您的浏览器不支持此功能，请手动截图');
+            }
+        });
+    });
+}
+
+// 暴露导出函数到全局
+window.exportAsImage = exportAsImage;
+window.exportAsPDF = exportAsPDF;
+window.copyToClipboard = copyToClipboard;
+window.generateReport = generateReport;
+
 // 初始化页面
 window.onload = function() {
     initData();
