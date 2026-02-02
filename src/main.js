@@ -952,10 +952,84 @@ function exportAsPDF() {
 
 
 
+// 导出每日健康数据为图片
+function exportDailyDataAsImage() {
+    const modalBody = document.getElementById('modalBody');
+    if (!modalBody || modalBody.innerHTML.trim() === '') {
+        alert('暂无健康数据可导出');
+        return;
+    }
+    
+    html2canvas(modalBody, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        willReadFrequently: true
+    }).then(canvas => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        const date = document.getElementById('modalTitle').textContent.split(' ')[0];
+        link.download = `${date} 健康数据.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+    });
+}
+
+// 导出每日健康数据为PDF
+function exportDailyDataAsPDF() {
+    const modalBody = document.getElementById('modalBody');
+    if (!modalBody || modalBody.innerHTML.trim() === '') {
+        alert('暂无健康数据可导出');
+        return;
+    }
+    
+    html2canvas(modalBody, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        willReadFrequently: true
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const pageHeight = 297;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        const date = document.getElementById('modalTitle').textContent.split(' ')[0];
+        pdf.save(`${date} 健康数据.pdf`);
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+    });
+}
+
 // 暴露导出函数到全局
 window.exportAsImage = exportAsImage;
 window.exportAsPDF = exportAsPDF;
 window.generateReport = generateReport;
+window.exportDailyDataAsImage = exportDailyDataAsImage;
+window.exportDailyDataAsPDF = exportDailyDataAsPDF;
 
 // 初始化页面
 window.onload = function() {
