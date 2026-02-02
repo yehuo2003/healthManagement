@@ -76,11 +76,11 @@ export function generateHealthAdvice(riskLevels) {
     const advice = [];
     
     // 基于风险等级生成建议
-    if (riskLevels.bmi === '肥胖' || riskLevels.bmi === '超重') {
+    if (riskLevels.bmi === '肥胖' || riskLevels.bmi === '超重' || riskLevels.bmi === '偏胖' || riskLevels.bmi === '重度') {
         advice.push('建议控制饮食，减少高热量食物摄入，增加运动量');
     }
     
-    if (riskLevels.fatRate === '肥胖' || riskLevels.fatRate === '超重') {
+    if (riskLevels.fatRate === '肥胖' || riskLevels.fatRate === '超重' || riskLevels.fatRate === '偏高' || riskLevels.fatRate === '超高') {
         advice.push('建议增加有氧运动，如跑步、游泳等，减少脂肪堆积');
     }
     
@@ -94,6 +94,61 @@ export function generateHealthAdvice(riskLevels) {
     advice.push('定期测量健康数据，及时调整健康管理计划');
     
     return advice;
+}
+
+/**
+ * 计算身体得分
+ * @param {Object} riskLevels 风险等级对象
+ * @returns {Object} 身体得分对象，包含得分和等级
+ */
+function calculateBodyScore(riskLevels) {
+    // 定义等级得分映射
+    const levelScores = {
+        '消瘦': 60,
+        '偏瘦': 70,
+        '标准': 100,
+        '正常': 100,
+        '偏胖': 70,
+        '偏高': 70,
+        '肥胖': 50,
+        '超高': 40,
+        '重度': 30
+    };
+    
+    // 计算各项指标的得分
+    const scores = [];
+    for (const [key, level] of Object.entries(riskLevels)) {
+        if (level && level !== 'N/A') {
+            scores.push(levelScores[level] || 50);
+        }
+    }
+    
+    // 计算平均得分
+    const averageScore = scores.length > 0 ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : 0;
+    
+    // 确定得分等级和颜色
+    let scoreLevel = '';
+    let scoreColor = '';
+    
+    if (averageScore >= 90) {
+        scoreLevel = '优秀';
+        scoreColor = '#27ae60'; // 绿色
+    } else if (averageScore >= 75) {
+        scoreLevel = '良好';
+        scoreColor = '#3498db'; // 蓝色
+    } else if (averageScore >= 60) {
+        scoreLevel = '一般';
+        scoreColor = '#f39c12'; // 黄色
+    } else {
+        scoreLevel = '需要改善';
+        scoreColor = '#e74c3c'; // 红色
+    }
+    
+    return {
+        score: averageScore,
+        level: scoreLevel,
+        color: scoreColor
+    };
 }
 
 /**
@@ -149,6 +204,10 @@ export function generateReportData(reportType, timeRange, rawData, userInfo, hea
         weight: calculateWeightLevel(latestData.weight, userInfo.height, userInfo.gender),
         visceralFat: calculateVisceralFatLevel(latestData.visceralFat)
     };
+    
+    // 计算身体得分
+    const bodyScore = calculateBodyScore(riskLevels);
+    
     const healthAdvice = generateHealthAdvice(riskLevels);
     
     return {
@@ -162,7 +221,8 @@ export function generateReportData(reportType, timeRange, rawData, userInfo, hea
         trends: trends,
         riskLevels: riskLevels,
         healthAdvice: healthAdvice,
-        goals: healthGoals
+        goals: healthGoals,
+        bodyScore: bodyScore
     };
 }
 
@@ -176,6 +236,9 @@ export function generateReportHTML(reportData) {
     
     // 报告头部
     html += renderReportHeader(reportData);
+    
+    // 身体得分
+    html += renderBodyScore(reportData.bodyScore);
     
     // 数据概览
     html += renderDataOverview(reportData);
@@ -220,6 +283,25 @@ function renderReportHeader(reportData) {
             ${reportData.userInfo.name ? `<p style="margin: 5px 0; color: #7f8c8d;">姓名：${reportData.userInfo.name}</p>` : ''}
             ${reportData.userInfo.age ? `<p style="margin: 5px 0; color: #7f8c8d;">年龄：${reportData.userInfo.age}岁</p>` : ''}
             ${reportData.userInfo.gender ? `<p style="margin: 5px 0; color: #7f8c8d;">性别：${reportData.userInfo.gender === 'male' ? '男' : '女'}</p>` : ''}
+        </div>
+    `;
+}
+
+/**
+ * 渲染身体得分
+ * @param {Object} bodyScore 身体得分对象
+ * @returns {string} 身体得分HTML
+ */
+function renderBodyScore(bodyScore) {
+    if (!bodyScore) return '';
+    
+    return `
+        <div style="margin-bottom: 30px; text-align: center;">
+            <h3 style="color: #2c3e50; margin-bottom: 20px;">身体得分</h3>
+            <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+                <div style="font-size: 48px; font-weight: bold; margin: 0; color: ${bodyScore.color};">${bodyScore.score}</div>
+                <div style="font-size: 20px; margin: 10px 0 0 0; color: ${bodyScore.color};">${bodyScore.level}</div>
+            </div>
         </div>
     `;
 }
