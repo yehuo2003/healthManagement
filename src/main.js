@@ -944,42 +944,11 @@ function exportAsPDF() {
     });
 }
 
-// 复制到剪贴板
-function copyToClipboard() {
-    const reportElement = document.getElementById('reportPreview');
-    if (!reportElement || reportElement.innerHTML.includes('点击"生成报告"按钮生成报告预览')) {
-        alert('请先生成报告');
-        return;
-    }
-    
-    html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false
-    }).then(canvas => {
-        canvas.toBlob(blob => {
-            try {
-                navigator.clipboard.write([
-                    new ClipboardItem({
-                        'image/png': blob
-                    })
-                ]).then(() => {
-                    alert('报告已复制到剪贴板');
-                }).catch(err => {
-                    console.error('复制失败:', err);
-                    alert('复制失败，请手动截图');
-                });
-            } catch (e) {
-                alert('您的浏览器不支持此功能，请手动截图');
-            }
-        });
-    });
-}
+
 
 // 暴露导出函数到全局
 window.exportAsImage = exportAsImage;
 window.exportAsPDF = exportAsPDF;
-window.copyToClipboard = copyToClipboard;
 window.generateReport = generateReport;
 
 // 初始化页面
