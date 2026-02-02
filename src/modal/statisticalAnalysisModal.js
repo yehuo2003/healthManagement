@@ -47,6 +47,21 @@ function initAnalysisForm() {
     document.getElementById('analysisResults').innerHTML = '';
     document.getElementById('analysisChart').innerHTML = '';
     
+    // 添加时间范围选择事件监听器
+    const timeRangeSelect = document.getElementById('analysisTimeRange');
+    if (timeRangeSelect) {
+        timeRangeSelect.addEventListener('change', function() {
+            const customDateRange = document.getElementById('customDateRange');
+            if (customDateRange) {
+                if (this.value === 'custom') {
+                    customDateRange.style.display = 'flex';
+                } else {
+                    customDateRange.style.display = 'none';
+                }
+            }
+        });
+    }
+    
     // 添加表单提交事件
     const analysisForm = document.getElementById('analysisForm');
     if (analysisForm) {
@@ -74,12 +89,33 @@ export function performAnalysis() {
         return;
     }
     
+    // 处理自定义时间范围
+    let customStartDate = null;
+    let customEndDate = null;
+    
+    if (timeRange === 'custom') {
+        customStartDate = document.getElementById('customStartDate').value;
+        customEndDate = document.getElementById('customEndDate').value;
+        
+        if (!customStartDate || !customEndDate) {
+            alert('请选择开始时间和结束时间');
+            return;
+        }
+        
+        if (new Date(customStartDate) > new Date(customEndDate)) {
+            alert('开始时间不能晚于结束时间');
+            return;
+        }
+    }
+    
     // 生成统计分析报告
     const report = statisticalAnalysisUtils.generateStatisticalReport(
         rawData, 
         metric, 
         timeRange, 
-        statType
+        statType,
+        customStartDate,
+        customEndDate
     );
     
     // 显示分析结果
@@ -256,6 +292,17 @@ function getTimeRangeText(timeRange) {
         '6months': '近6个月',
         '1year': '近1年'
     };
+    
+    if (timeRange === 'custom') {
+        const customStartDate = document.getElementById('customStartDate').value;
+        const customEndDate = document.getElementById('customEndDate').value;
+        if (customStartDate && customEndDate) {
+            return `${customStartDate} 至 ${customEndDate}`;
+        } else {
+            return '自定义时间范围';
+        }
+    }
+    
     return timeRangeMap[timeRange] || timeRange;
 }
 

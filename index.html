@@ -371,7 +371,18 @@
                                 <option value="3months">近3个月</option>
                                 <option value="6months">近6个月</option>
                                 <option value="1year">近1年</option>
+                                <option value="custom">自定义</option>
                             </select>
+                        </div>
+                        <div id="customDateRange" style="display: none; grid-column: 1 / -1; gap: 15px; margin-top: 10px;">
+                            <div style="display: flex; flex-direction: column; flex: 1;">
+                                <label for="customStartDate">开始时间</label>
+                                <input type="date" id="customStartDate" style="padding: 8px;">
+                            </div>
+                            <div style="display: flex; flex-direction: column; flex: 1;">
+                                <label for="customEndDate">结束时间</label>
+                                <input type="date" id="customEndDate" style="padding: 8px;">
+                            </div>
                         </div>
                         <div style="display: flex; flex-direction: column;">
                             <label for="analysisStatType">统计类型</label>

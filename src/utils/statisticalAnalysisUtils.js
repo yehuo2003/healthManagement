@@ -349,21 +349,36 @@ export function analyzeDataVolatility(data, metric) {
  * @param {string} metric 指标名称
  * @param {string} timeRange 时间范围
  * @param {string} statType 统计类型
+ * @param {string} customStartDate 自定义开始时间
+ * @param {string} customEndDate 自定义结束时间
  * @returns {Object} 统计分析报告
  */
-export function generateStatisticalReport(rawData, metric, timeRange, statType) {
+export function generateStatisticalReport(rawData, metric, timeRange, statType, customStartDate, customEndDate) {
     // 根据时间范围筛选数据
     let filteredData = rawData;
     if (timeRange !== 'all') {
-        const now = new Date();
-        let months = 0;
-        switch (timeRange) {
-            case '3months': months = 3; break;
-            case '6months': months = 6; break;
-            case '1year': months = 12; break;
+        if (timeRange === 'custom' && customStartDate && customEndDate) {
+            // 处理自定义时间范围
+            const startTime = new Date(customStartDate);
+            const endTime = new Date(customEndDate);
+            // 设置结束时间为当天的23:59:59
+            endTime.setHours(23, 59, 59, 999);
+            filteredData = rawData.filter(item => {
+                const itemDate = new Date(item.date);
+                return itemDate >= startTime && itemDate <= endTime;
+            });
+        } else {
+            // 处理预设时间范围
+            const now = new Date();
+            let months = 0;
+            switch (timeRange) {
+                case '3months': months = 3; break;
+                case '6months': months = 6; break;
+                case '1year': months = 12; break;
+            }
+            const startTime = new Date(now.setMonth(now.getMonth() - months));
+            filteredData = rawData.filter(item => new Date(item.date) >= startTime);
         }
-        const startTime = new Date(now.setMonth(now.getMonth() - months));
-        filteredData = rawData.filter(item => new Date(item.date) >= startTime);
     }
     
     // 生成统计数据
