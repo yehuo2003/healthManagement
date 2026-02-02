@@ -100,7 +100,7 @@ function displayAnalysisResults(report, metric) {
     
     // 获取指标配置信息
     const metricConfig = healthMetricsConfig.find(config => config.key === metric) || {
-        name: metric,
+        label: metric,
         unit: ''
     };
     
@@ -110,7 +110,7 @@ function displayAnalysisResults(report, metric) {
         <div class="analysis-summary">
             <div class="summary-item">
                 <span class="label">分析指标：</span>
-                <span class="value">${metricConfig.name}</span>
+                <span class="value">${metricConfig.label}</span>
             </div>
             <div class="summary-item">
                 <span class="label">时间范围：</span>
@@ -219,7 +219,7 @@ function displayAnalysisChart(report, metric) {
     
     // 获取指标配置信息
     const metricConfig = healthMetricsConfig.find(config => config.key === metric) || {
-        name: metric,
+        label: metric,
         unit: ''
     };
     
@@ -239,7 +239,7 @@ function displayAnalysisChart(report, metric) {
     analysisChart = chartManager.createAnalysisChart(
         chartContainer, 
         chartData, 
-        metricConfig.name, 
+        metricConfig.label, 
         metricConfig.unit
     );
 }
