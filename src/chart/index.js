@@ -2,7 +2,7 @@
  * @Author: LinZhuMing
  * @Date: 2026-01-31 14:31:34
  * @LastEditors: LinZhuMing
- * @LastEditTime: 2026-01-31 15:27:33
+ * @LastEditTime: 2026-02-02 17:04:24
  * @FilePath: \healthManagement\src\chart\index.js
  * @Description: 
  * 
@@ -96,6 +96,96 @@ export function updateChart(myChart, rawData, currentMetrics, chartMetrics, user
     
     // 返回图表实例
     return myChart;
+}
+
+/**
+ * 创建分析图表
+ * @param {HTMLElement} chartContainer 图表容器
+ * @param {Object} chartData 图表数据
+ * @param {string} metricName 指标名称
+ * @param {string} unit 单位
+ * @returns {Object} 图表实例
+ */
+export function createAnalysisChart(chartContainer, chartData, metricName, unit) {
+    if (!chartContainer) return null;
+    
+    const analysisChart = echarts.init(chartContainer);
+    
+    const option = {
+        title: {
+            text: `${metricName}趋势分析`,
+            left: 'center',
+            textStyle: {
+                fontSize: 16,
+                fontWeight: 'bold'
+            }
+        },
+        tooltip: {
+            trigger: 'axis',
+            formatter: function(params) {
+                return `${params[0].name}<br/>${metricName}: ${params[0].value} ${unit}`;
+            }
+        },
+        grid: {
+            left: '3%',
+            right: '4%',
+            bottom: '3%',
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: chartData.dates,
+            axisLabel: {
+                rotate: 45
+            }
+        },
+        yAxis: {
+            type: 'value',
+            name: `${metricName} (${unit})`,
+            axisLabel: {
+                formatter: `{value} ${unit}`
+            }
+        },
+        series: [
+            {
+                name: metricName,
+                type: 'line',
+                data: chartData.values,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 6,
+                lineStyle: {
+                    width: 2,
+                    color: '#4CAF50'
+                },
+                itemStyle: {
+                    color: '#4CAF50'
+                },
+                areaStyle: {
+                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                        {
+                            offset: 0,
+                            color: 'rgba(76, 175, 80, 0.3)'
+                        },
+                        {
+                            offset: 1,
+                            color: 'rgba(76, 175, 80, 0.1)'
+                        }
+                    ])
+                }
+            }
+        ]
+    };
+    
+    analysisChart.setOption(option);
+    
+    // 响应式调整
+    window.addEventListener('resize', function() {
+        analysisChart.resize();
+    });
+    
+    return analysisChart;
 }
 
 

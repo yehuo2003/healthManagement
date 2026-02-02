@@ -14,6 +14,7 @@ import * as modalManager from './modal/index.js';
 // 导入工具函数模块
 import * as healthGoalUtils from './utils/healthGoalUtils.js';
 import * as healthReportUtils from './utils/healthReportUtils.js';
+import * as statisticalAnalysisUtils from './utils/statisticalAnalysisUtils.js';
 
 // 导入配置模块
 import { healthMetricsConfig, levelColors, chartMetrics, STORAGE_KEY, USER_INFO_KEY, HEALTH_GOALS_KEY, formatDate, weightChangeTerms, fatRateTerms, trendTerms } from './config/index.js';
@@ -284,6 +285,11 @@ async function initData() {
         rawData = dataManager.getHealthData();
     }
     
+    // 更新全局变量引用，供其他模块使用
+    window.rawData = rawData;
+    window.userInfo = userInfo;
+    window.healthGoals = healthGoals;
+    
     // 渲染指标选择器
     renderMetricSelector();
     
@@ -301,11 +307,15 @@ async function initData() {
 // 保存数据到localStorage
 function saveData() {
     dataManager.saveData(rawData);
+    // 更新全局变量引用
+    window.rawData = rawData;
 }
 
 // 保存健康目标
 function saveHealthGoals() {
     localStorage.setItem(HEALTH_GOALS_KEY, JSON.stringify(healthGoals));
+    // 更新全局变量引用
+    window.healthGoals = healthGoals;
 }
 
 // 重新计算所有数据的衍生指标
@@ -855,6 +865,25 @@ window.closeModal = function() {
     document.getElementById('dailyMetricsModal').style.display = 'none';
 };
 
+// 统计分析模态框控制函数
+window.openStatisticalAnalysisModal = function() {
+    // 先关闭设置菜单
+    toggleSettingsMenu();
+    modalManager.openStatisticalAnalysisModal();
+};
+
+window.closeStatisticalAnalysisModal = function() {
+    modalManager.closeStatisticalAnalysisModal();
+};
+
+window.performAnalysis = function() {
+    modalManager.performAnalysis();
+};
+
+window.exportAnalysisResults = function() {
+    modalManager.exportAnalysisResults();
+};
+
 // 更新目标列表
 function updateGoalList() {
     healthGoalUtils.updateGoalList(healthGoals, rawData, userInfo, saveHealthGoals);
@@ -1030,6 +1059,11 @@ window.exportAsPDF = exportAsPDF;
 window.generateReport = generateReport;
 window.exportDailyDataAsImage = exportDailyDataAsImage;
 window.exportDailyDataAsPDF = exportDailyDataAsPDF;
+
+// 暴露全局变量，供其他模块使用
+window.rawData = rawData;
+window.userInfo = userInfo;
+window.healthGoals = healthGoals;
 
 // 初始化页面
 window.onload = function() {
