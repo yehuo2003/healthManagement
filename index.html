@@ -374,6 +374,15 @@
                                 <option value="custom">自定义</option>
                             </select>
                         </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="analysisStatType">统计类型</label>
+                            <select id="analysisStatType" style="padding: 8px;" required>
+                                <option value="monthly">月度统计</option>
+                                <option value="quarterly">季度统计</option>
+                                <option value="yearly">年度统计</option>
+                                <option value="weekly">周平均变化率</option>
+                            </select>
+                        </div>
                         <div id="customDateRange" style="display: none; grid-column: 1 / -1; gap: 15px; margin-top: 10px;">
                             <div style="display: flex; flex-direction: column; flex: 1;">
                                 <label for="customStartDate">开始时间</label>
@@ -384,17 +393,14 @@
                                 <input type="date" id="customEndDate" style="padding: 8px;">
                             </div>
                         </div>
-                        <div style="display: flex; flex-direction: column;">
-                            <label for="analysisStatType">统计类型</label>
-                            <select id="analysisStatType" style="padding: 8px;" required>
-                                <option value="monthly">月度统计</option>
-                                <option value="quarterly">季度统计</option>
-                                <option value="yearly">年度统计</option>
-                                <option value="weekly">周平均变化率</option>
-                            </select>
-                        </div>
-                        <div style="display: flex; align-items: flex-end;">
-                            <button type="submit" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">执行分析</button>
+                        <div style="grid-column: 1 / -1; margin-top: 20px;">
+                            <div style="display: flex; gap: 10px; justify-content: left;">
+                                <button type="submit" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">执行分析</button>
+                                <div id="analysisExportButtons" style="display: none; gap: 10px; align-items: center;">
+                                    <button onclick="exportAnalysisAsImage()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">导出为图片</button>
+                                    <button onclick="exportAnalysisAsPDF()" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">导出为PDF</button>
+                                </div>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -413,10 +419,7 @@
                     <div id="analysisChart" style="margin-top: 15px; border: 1px solid #e0e0e0; border-radius: 8px; height: 400px;"></div>
                 </div>
                 
-                <!-- 导出按钮 -->
-                <div style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
-                    <button onclick="exportAnalysisResults()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出分析结果</button>
-                </div>
+
             </div>
         </div>
     </div>

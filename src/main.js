@@ -1053,12 +1053,196 @@ function exportDailyDataAsPDF() {
     });
 }
 
+// 获取时间范围文本，用于文件名生成
+function getTimeRangeForFilename() {
+    const timeRange = document.getElementById('analysisTimeRange').value;
+    const customStartDate = document.getElementById('customStartDate').value;
+    const customEndDate = document.getElementById('customEndDate').value;
+    
+    if (timeRange === 'custom' && customStartDate && customEndDate) {
+        return `${customStartDate}至${customEndDate}`;
+    } else if (timeRange === 'all') {
+        return '全部时间';
+    } else if (timeRange === '3months') {
+        // 计算近3个月的时间范围
+        const now = new Date();
+        const endDate = now;
+        const startDate = new Date(now.setMonth(now.getMonth() - 3));
+        
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        
+        return `${startYear}-${startMonth}至${endYear}-${endMonth}`;
+    } else if (timeRange === '6months') {
+        // 计算近6个月的时间范围
+        const now = new Date();
+        const endDate = now;
+        const startDate = new Date(now.setMonth(now.getMonth() - 6));
+        
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        
+        return `${startYear}-${startMonth}至${endYear}-${endMonth}`;
+    } else if (timeRange === '1year') {
+        // 计算近1年的时间范围
+        const now = new Date();
+        const endDate = now;
+        const startDate = new Date(now.setFullYear(now.getFullYear() - 1));
+        
+        const startYear = startDate.getFullYear();
+        const startMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+        const endYear = endDate.getFullYear();
+        const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+        
+        return `${startYear}-${startMonth}至${endYear}-${endMonth}`;
+    }
+    return '统计分析';
+}
+
+// 导出分析结果为图片
+function exportAnalysisAsImage() {
+    const analysisResults = document.getElementById('analysisResults');
+    const analysisChart = document.getElementById('analysisChart');
+    if (!analysisResults || analysisResults.innerHTML.includes('点击"执行分析"按钮查看分析结果')) {
+        alert('请先执行分析');
+        return;
+    }
+    
+    // 获取时间范围文本，用于文件名
+    const timeRangeText = getTimeRangeForFilename();
+    
+    // 创建一个容器，包含分析结果和图表
+    const exportContainer = document.createElement('div');
+    exportContainer.style.padding = '20px';
+    exportContainer.style.backgroundColor = 'white';
+    exportContainer.style.width = '100%';
+    exportContainer.style.maxWidth = '800px';
+    exportContainer.style.margin = '0 auto';
+    
+    // 添加分析结果
+    exportContainer.appendChild(analysisResults.cloneNode(true));
+    
+    // 添加图表（如果存在）
+    if (analysisChart && analysisChart.innerHTML) {
+        const chartContainer = document.createElement('div');
+        chartContainer.style.marginTop = '20px';
+        chartContainer.appendChild(analysisChart.cloneNode(true));
+        exportContainer.appendChild(chartContainer);
+    }
+    
+    // 将容器添加到页面中，以便html2canvas能够捕获它
+    document.body.appendChild(exportContainer);
+    
+    // 使用html2canvas捕获容器内容
+    html2canvas(exportContainer, {
+        scale: 2, // 提高清晰度
+        useCORS: true, // 允许加载跨域图片
+        logging: false
+    }).then(canvas => {
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `${timeRangeText} 统计分析结果.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    });
+}
+
+// 导出分析结果为PDF
+function exportAnalysisAsPDF() {
+    const analysisResults = document.getElementById('analysisResults');
+    const analysisChart = document.getElementById('analysisChart');
+    if (!analysisResults || analysisResults.innerHTML.includes('点击"执行分析"按钮查看分析结果')) {
+        alert('请先执行分析');
+        return;
+    }
+    
+    // 获取时间范围文本，用于文件名
+    const timeRangeText = getTimeRangeForFilename();
+    
+    // 创建一个容器，包含分析结果和图表
+    const exportContainer = document.createElement('div');
+    exportContainer.style.padding = '20px';
+    exportContainer.style.backgroundColor = 'white';
+    exportContainer.style.width = '100%';
+    exportContainer.style.maxWidth = '800px';
+    exportContainer.style.margin = '0 auto';
+    
+    // 添加分析结果
+    exportContainer.appendChild(analysisResults.cloneNode(true));
+    
+    // 添加图表（如果存在）
+    if (analysisChart && analysisChart.innerHTML) {
+        const chartContainer = document.createElement('div');
+        chartContainer.style.marginTop = '20px';
+        chartContainer.appendChild(analysisChart.cloneNode(true));
+        exportContainer.appendChild(chartContainer);
+    }
+    
+    // 将容器添加到页面中，以便html2canvas能够捕获它
+    document.body.appendChild(exportContainer);
+    
+    // 使用html2canvas捕获容器内容
+    html2canvas(exportContainer, {
+        scale: 2, // 提高清晰度
+        useCORS: true, // 允许加载跨域图片
+        logging: false
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const pageHeight = 297;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        pdf.save(`${timeRangeText} 统计分析结果.pdf`);
+        
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    });
+}
+
 // 暴露导出函数到全局
 window.exportAsImage = exportAsImage;
 window.exportAsPDF = exportAsPDF;
 window.generateReport = generateReport;
 window.exportDailyDataAsImage = exportDailyDataAsImage;
 window.exportDailyDataAsPDF = exportDailyDataAsPDF;
+window.exportAnalysisAsImage = exportAnalysisAsImage;
+window.exportAnalysisAsPDF = exportAnalysisAsPDF;
 
 // 暴露全局变量，供其他模块使用
 window.rawData = rawData;

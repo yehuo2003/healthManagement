@@ -36,6 +36,11 @@ export function closeStatisticalAnalysisModal() {
             analysisChart.dispose();
             analysisChart = null;
         }
+        // 隐藏导出按钮
+        const exportButtons = document.getElementById('analysisExportButtons');
+        if (exportButtons) {
+            exportButtons.style.display = 'none';
+        }
     }
 }
 
@@ -123,6 +128,12 @@ export function performAnalysis() {
     
     // 显示分析图表
     displayAnalysisChart(report, metric);
+    
+    // 显示导出按钮
+    const exportButtons = document.getElementById('analysisExportButtons');
+    if (exportButtons) {
+        exportButtons.style.display = 'flex';
+    }
 }
 
 /**
