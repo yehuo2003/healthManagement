@@ -85,6 +85,36 @@ window.openHealthGoalModal = function() {
     // 更新目标列表
     updateGoalList();
     document.getElementById('healthGoalModal').style.display = 'block';
+    
+    // 添加指标类型选择事件监听器，自动填充目标值
+    const metricTypeSelect = document.getElementById('goalMetricType');
+    if (metricTypeSelect) {
+        // 移除现有的事件监听器，避免重复添加
+        metricTypeSelect.onchange = null;
+        
+        // 添加新的事件监听器
+        metricTypeSelect.onchange = function() {
+            const metricType = this.value;
+            // 获取最新的健康数据
+            if (rawData.length === 0) return;
+            
+            const latestData = [...rawData].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+            let currentValue = latestData[metricType];
+            
+            // 如果是BMI，需要计算
+            if (metricType === 'bmi' && !currentValue && userInfo.height) {
+                currentValue = dataManager.calculateBMI(latestData.weight, userInfo.height);
+            }
+            
+            // 填充目标值输入框
+            if (currentValue) {
+                document.getElementById('goalTargetValue').value = currentValue;
+            }
+        };
+        
+        // 触发一次change事件，填充当前选择的指标值
+        metricTypeSelect.dispatchEvent(new Event('change'));
+    }
 };
 
 window.closeHealthGoalModal = function() {
