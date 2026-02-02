@@ -880,6 +880,12 @@ function generateReport() {
     const reportHTML = healthReportUtils.generateReportHTML(reportData);
     
     document.getElementById('reportPreview').innerHTML = reportHTML;
+    
+    // 显示导出按钮
+    const exportButtons = document.getElementById('exportButtons');
+    if (exportButtons) {
+        exportButtons.style.display = 'flex';
+    }
 }
 
 // 导出为图片

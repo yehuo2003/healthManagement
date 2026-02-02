@@ -305,8 +305,12 @@
                             </select>
                         </div>
                     </div>
-                    <div style="margin-top: 20px;">
+                    <div style="margin-top: 20px; display: flex; gap: 15px; align-items: center;">
                         <button onclick="generateReport()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">生成报告</button>
+                        <div id="exportButtons" style="display: none; gap: 10px;">
+                            <button onclick="exportAsImage()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为图片</button>
+                            <button onclick="exportAsPDF()" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为PDF</button>
+                        </div>
                     </div>
                 </div>
                 
@@ -318,14 +322,7 @@
                     </div>
                 </div>
                 
-                <!-- 导出选项区域 -->
-                <div>
-                    <h4>导出选项</h4>
-                    <div style="display: flex; gap: 15px; margin-top: 15px;">
-                        <button onclick="exportAsImage()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为图片</button>
-                        <button onclick="exportAsPDF()" style="padding: 10px 20px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer;">导出为PDF</button>
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
