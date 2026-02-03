@@ -603,15 +603,20 @@ h1 {
     overflow: hidden;
 }
 
+/* 数据表格容器样式 */
+.data-table-container {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    animation: slideInUp 0.5s ease-out 0.3s both;
+}
+
 /* 数据表格样式 */
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    border-radius: 8px;
-    overflow: hidden;
-    animation: slideInUp 0.5s ease-out 0.3s both;
 }
 
 .data-table th,
@@ -695,6 +700,8 @@ h1 {
 
 #healthTrendModal .modal-body {
     max-height: 75vh;
+    overflow-y: auto;
+    padding-right: 15px;
 }
 
 /* 响应式调整 */

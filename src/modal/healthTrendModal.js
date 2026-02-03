@@ -17,8 +17,8 @@ export function createHealthTrendModal() {
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
-                <h2>健康趋势预测</h2>
-                <span class="close">&times;</span>
+                <h3>健康趋势预测</h3>
+                <button class="close-button">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="trend-controls">
@@ -53,16 +53,18 @@ export function createHealthTrendModal() {
                     
                     <div class="trend-data">
                         <h3>预测数据</h3>
-                        <table id="trend-data-table" class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>日期</th>
-                                    <th id="trend-value-header">预测值</th>
-                                    <th>类型</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
+                        <div class="data-table-container">
+                            <table id="trend-data-table" class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th id="trend-value-header">预测值</th>
+                                        <th>类型</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -82,7 +84,7 @@ export function createHealthTrendModal() {
  * @param {HTMLDivElement} modal 模态框元素
  */
 function bindTrendModalEvents(modal) {
-    const closeBtn = modal.querySelector('.close');
+    const closeBtn = modal.querySelector('.close-button');
     const calculateBtn = modal.querySelector('#calculate-trend');
     
     // 关闭模态框
