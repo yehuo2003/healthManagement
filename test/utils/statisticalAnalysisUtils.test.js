@@ -1,5 +1,6 @@
 // 测试统计分析工具模块
 import * as statisticalAnalysisUtils from '../../src/utils/statisticalAnalysisUtils.js';
+import * as dataManager from '../../src/data/index.js';
 
 // 模拟数据
 const mockRawData = [
@@ -13,6 +14,14 @@ const mockRawData = [
 
 // 模拟空数据
 const emptyRawData = [];
+
+// 模拟用户信息
+const mockUserInfo = {
+    height: 175, // 厘米
+    age: 30,
+    gender: 'male',
+    activityLevel: 1.5
+};
 
 describe('统计分析工具模块测试', () => {
     beforeEach(() => {
@@ -121,6 +130,32 @@ describe('统计分析工具模块测试', () => {
             expect(result.count).toBe(2);
             expect(result.average).toBe(138);
             expect(result.range).toBe(4); // 140 - 136 = 4
+        });
+
+        test('应该能够计算衍生指标BMI', () => {
+            const result = statisticalAnalysisUtils.calculateMetricStats(mockRawData, 'bmi', mockUserInfo);
+            
+            expect(result.count).toBe(6);
+            expect(result.average).toBeGreaterThan(0);
+            expect(result.max).toBeGreaterThan(0);
+            expect(result.min).toBeGreaterThan(0);
+        });
+
+        test('应该能够计算衍生指标肥胖度', () => {
+            const result = statisticalAnalysisUtils.calculateMetricStats(mockRawData, 'obesityDegree', mockUserInfo);
+            
+            expect(result.count).toBe(6);
+            // 肥胖度可以是负数，表示体重低于理想体重，这是正常的
+            expect(result.average).not.toBe(0);
+            expect(result.max).not.toBe(0);
+            expect(result.min).not.toBe(0);
+        });
+
+        test('当没有用户信息时应该返回空统计数据', () => {
+            const result = statisticalAnalysisUtils.calculateMetricStats(mockRawData, 'bmi');
+            
+            expect(result.count).toBe(0);
+            expect(result.average).toBe(0);
         });
     });
 
@@ -375,6 +410,41 @@ describe('统计分析工具模块测试', () => {
             
             expect(result.statType).toBe('weekly');
             expect(Array.isArray(result.statsData)).toBe(true);
+        });
+
+        test('应该能够分析衍生指标BMI', () => {
+            const result = statisticalAnalysisUtils.generateStatisticalReport(
+                mockRawData, 
+                'bmi', 
+                'all', 
+                'monthly',
+                null,
+                null,
+                mockUserInfo
+            );
+            
+            expect(result.metric).toBe('bmi');
+            expect(Array.isArray(result.statsData)).toBe(true);
+            expect(result.totalStats.count).toBeGreaterThan(0);
+            expect(result.totalStats.average).toBeGreaterThan(0);
+        });
+
+        test('应该能够分析衍生指标肥胖度', () => {
+            const result = statisticalAnalysisUtils.generateStatisticalReport(
+                mockRawData, 
+                'obesityDegree', 
+                'all', 
+                'monthly',
+                null,
+                null,
+                mockUserInfo
+            );
+            
+            expect(result.metric).toBe('obesityDegree');
+            expect(Array.isArray(result.statsData)).toBe(true);
+            expect(result.totalStats.count).toBeGreaterThan(0);
+            // 肥胖度可以是负数，表示体重低于理想体重，这是正常的
+            expect(result.totalStats.average).not.toBe(0);
         });
     });
 });

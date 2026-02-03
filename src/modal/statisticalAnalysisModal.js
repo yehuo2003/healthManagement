@@ -120,7 +120,8 @@ export function performAnalysis() {
         timeRange, 
         statType,
         customStartDate,
-        customEndDate
+        customEndDate,
+        userInfo
     );
     
     // 显示分析结果

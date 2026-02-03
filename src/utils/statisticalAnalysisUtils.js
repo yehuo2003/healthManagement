@@ -1,4 +1,5 @@
 // 统计分析工具函数
+import * as dataManager from '../data/index.js';
 
 /**
  * 按月份分组数据
@@ -96,12 +97,62 @@ export function groupDataByWeek(rawData) {
  * 计算单个指标的统计数据
  * @param {Array} data 数据数组
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息，用于计算衍生指标
  * @returns {Object} 统计数据
  */
-export function calculateMetricStats(data, metric) {
+export function calculateMetricStats(data, metric, userInfo = {}) {
     const values = data
-        .map(item => parseFloat(item[metric]))
-        .filter(value => !isNaN(value));
+        .map(item => {
+            // 尝试获取原始值
+            let value = item[metric];
+            
+            // 如果值不存在或为null/undefined，尝试计算衍生指标
+            if (!value || value === null || value === undefined) {
+                // 根据指标类型计算衍生值
+                switch (metric) {
+                    case 'bmi':
+                        if (item.weight && userInfo.height) {
+                            value = dataManager.calculateBMI(item.weight, userInfo.height);
+                        }
+                        break;
+                    case 'obesityDegree':
+                        if (item.weight && userInfo.height && userInfo.gender) {
+                            value = dataManager.calculateObesityDegree(item.weight, userInfo.height, userInfo.gender);
+                        }
+                        break;
+                    case 'whr':
+                        if (item.waist && item.hip) {
+                            value = dataManager.calculateWHR(item.waist, item.hip);
+                        }
+                        break;
+                    case 'bmr':
+                        if (item.weight && userInfo.height && userInfo.age && userInfo.gender) {
+                            value = dataManager.calculateBMR(item.weight, userInfo.height, userInfo.age, userInfo.gender);
+                        }
+                        break;
+                    case 'muscleRate':
+                        if (item.muscleMass && item.weight) {
+                            value = dataManager.calculateMuscleRate(item.muscleMass, item.weight);
+                        }
+                        break;
+                    case 'leanBodyMass':
+                        if (item.weight && item.fatRate) {
+                            value = dataManager.calculateLeanBodyMass(item.weight, item.fatRate);
+                        }
+                        break;
+                    case 'fatMass':
+                        if (item.weight && item.fatRate) {
+                            value = dataManager.calculateFatMass(item.weight, item.fatRate);
+                        }
+                        break;
+                }
+            }
+            
+            // 尝试将值转换为浮点数
+            const numValue = parseFloat(value);
+            return isNaN(numValue) ? null : numValue;
+        })
+        .filter(value => value !== null && !isNaN(value));
     
     if (values.length === 0) {
         return {
@@ -149,14 +200,15 @@ export function calculateMetricStats(data, metric) {
  * 计算月度统计数据
  * @param {Array} rawData 原始健康数据
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Array} 月度统计数据
  */
-export function calculateMonthlyStats(rawData, metric) {
+export function calculateMonthlyStats(rawData, metric, userInfo = {}) {
     const groupedData = groupDataByMonth(rawData);
     const monthlyStats = [];
     
     Object.entries(groupedData).forEach(([month, data]) => {
-        const stats = calculateMetricStats(data, metric);
+        const stats = calculateMetricStats(data, metric, userInfo);
         monthlyStats.push({
             period: month,
             ...stats
@@ -171,14 +223,15 @@ export function calculateMonthlyStats(rawData, metric) {
  * 计算季度统计数据
  * @param {Array} rawData 原始健康数据
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Array} 季度统计数据
  */
-export function calculateQuarterlyStats(rawData, metric) {
+export function calculateQuarterlyStats(rawData, metric, userInfo = {}) {
     const groupedData = groupDataByQuarter(rawData);
     const quarterlyStats = [];
     
     Object.entries(groupedData).forEach(([quarter, data]) => {
-        const stats = calculateMetricStats(data, metric);
+        const stats = calculateMetricStats(data, metric, userInfo);
         quarterlyStats.push({
             period: quarter,
             ...stats
@@ -193,14 +246,15 @@ export function calculateQuarterlyStats(rawData, metric) {
  * 计算年度统计数据
  * @param {Array} rawData 原始健康数据
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Array} 年度统计数据
  */
-export function calculateYearlyStats(rawData, metric) {
+export function calculateYearlyStats(rawData, metric, userInfo = {}) {
     const groupedData = groupDataByYear(rawData);
     const yearlyStats = [];
     
     Object.entries(groupedData).forEach(([year, data]) => {
-        const stats = calculateMetricStats(data, metric);
+        const stats = calculateMetricStats(data, metric, userInfo);
         yearlyStats.push({
             period: year,
             ...stats
@@ -215,15 +269,16 @@ export function calculateYearlyStats(rawData, metric) {
  * 计算周平均变化率
  * @param {Array} rawData 原始健康数据
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Array} 周平均变化率数据
  */
-export function calculateWeeklyAverageChange(rawData, metric) {
+export function calculateWeeklyAverageChange(rawData, metric, userInfo = {}) {
     const groupedData = groupDataByWeek(rawData);
     const weeklyStats = [];
     
     // 计算每周的平均指标值
     Object.entries(groupedData).forEach(([week, data]) => {
-        const stats = calculateMetricStats(data, metric);
+        const stats = calculateMetricStats(data, metric, userInfo);
         weeklyStats.push({
             period: week,
             average: stats.average
@@ -257,14 +312,63 @@ export function calculateWeeklyAverageChange(rawData, metric) {
  * 计算指标趋势
  * @param {Array} rawData 原始健康数据
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Array} 趋势数据
  */
-export function calculateMetricTrend(rawData, metric) {
+export function calculateMetricTrend(rawData, metric, userInfo = {}) {
     const sortedData = [...rawData].sort((a, b) => new Date(a.date) - new Date(b.date));
-    return sortedData.map(item => ({
-        date: item.date,
-        value: parseFloat(item[metric]) || 0
-    })).filter(item => item.value !== 0);
+    return sortedData.map(item => {
+        // 尝试获取原始值
+        let value = item[metric];
+        
+        // 如果值不存在或为null/undefined，尝试计算衍生指标
+        if (!value || value === null || value === undefined) {
+            // 根据指标类型计算衍生值
+            switch (metric) {
+                case 'bmi':
+                    if (item.weight && userInfo.height) {
+                        value = dataManager.calculateBMI(item.weight, userInfo.height);
+                    }
+                    break;
+                case 'obesityDegree':
+                    if (item.weight && userInfo.height && userInfo.gender) {
+                        value = dataManager.calculateObesityDegree(item.weight, userInfo.height, userInfo.gender);
+                    }
+                    break;
+                case 'whr':
+                    if (item.waist && item.hip) {
+                        value = dataManager.calculateWHR(item.waist, item.hip);
+                    }
+                    break;
+                case 'bmr':
+                    if (item.weight && userInfo.height && userInfo.age && userInfo.gender) {
+                        value = dataManager.calculateBMR(item.weight, userInfo.height, userInfo.age, userInfo.gender);
+                    }
+                    break;
+                case 'muscleRate':
+                    if (item.muscleMass && item.weight) {
+                        value = dataManager.calculateMuscleRate(item.muscleMass, item.weight);
+                    }
+                    break;
+                case 'leanBodyMass':
+                    if (item.weight && item.fatRate) {
+                        value = dataManager.calculateLeanBodyMass(item.weight, item.fatRate);
+                    }
+                    break;
+                case 'fatMass':
+                    if (item.weight && item.fatRate) {
+                        value = dataManager.calculateFatMass(item.weight, item.fatRate);
+                    }
+                    break;
+            }
+        }
+        
+        const numValue = parseFloat(value) || 0;
+        return {
+            date: item.date,
+            value: numValue
+        };
+    }).filter(item => item.value !== 0);
 }
 
 /**
@@ -315,10 +419,11 @@ export function analyzeTrendDirection(trendData) {
  * 分析数据波动
  * @param {Array} data 数据数组
  * @param {string} metric 指标名称
+ * @param {Object} userInfo 用户信息
  * @returns {Object} 波动分析结果
  */
-export function analyzeDataVolatility(data, metric) {
-    const stats = calculateMetricStats(data, metric);
+export function analyzeDataVolatility(data, metric, userInfo = {}) {
+    const stats = calculateMetricStats(data, metric, userInfo);
     
     if (stats.count < 2) {
         return {
@@ -356,9 +461,10 @@ export function analyzeDataVolatility(data, metric) {
  * @param {string} statType 统计类型
  * @param {string} customStartDate 自定义开始时间
  * @param {string} customEndDate 自定义结束时间
+ * @param {Object} userInfo 用户信息
  * @returns {Object} 统计分析报告
  */
-export function generateStatisticalReport(rawData, metric, timeRange, statType, customStartDate, customEndDate) {
+export function generateStatisticalReport(rawData, metric, timeRange, statType, customStartDate, customEndDate, userInfo = {}) {
     // 根据时间范围筛选数据
     let filteredData = rawData;
     if (timeRange !== 'all') {
@@ -390,27 +496,27 @@ export function generateStatisticalReport(rawData, metric, timeRange, statType, 
     let statsData = [];
     switch (statType) {
         case 'monthly':
-            statsData = calculateMonthlyStats(filteredData, metric);
+            statsData = calculateMonthlyStats(filteredData, metric, userInfo);
             break;
         case 'quarterly':
-            statsData = calculateQuarterlyStats(filteredData, metric);
+            statsData = calculateQuarterlyStats(filteredData, metric, userInfo);
             break;
         case 'yearly':
-            statsData = calculateYearlyStats(filteredData, metric);
+            statsData = calculateYearlyStats(filteredData, metric, userInfo);
             break;
         case 'weekly':
-            statsData = calculateWeeklyAverageChange(filteredData, metric);
+            statsData = calculateWeeklyAverageChange(filteredData, metric, userInfo);
             break;
     }
     
     // 生成趋势数据
-    const trendData = calculateMetricTrend(filteredData, metric);
+    const trendData = calculateMetricTrend(filteredData, metric, userInfo);
     
     // 分析趋势方向
     const trendAnalysis = analyzeTrendDirection(trendData);
     
     // 分析数据波动
-    const volatilityAnalysis = analyzeDataVolatility(filteredData, metric);
+    const volatilityAnalysis = analyzeDataVolatility(filteredData, metric, userInfo);
     
     return {
         metric: metric,
@@ -418,7 +524,7 @@ export function generateStatisticalReport(rawData, metric, timeRange, statType, 
         statType: statType,
         statsData: statsData,
         trendData: trendData,
-        totalStats: calculateMetricStats(filteredData, metric),
+        totalStats: calculateMetricStats(filteredData, metric, userInfo),
         trendAnalysis: trendAnalysis,
         volatilityAnalysis: volatilityAnalysis
     };
