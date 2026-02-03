@@ -111,19 +111,49 @@ export function createAnalysisChart(chartContainer, chartData, metricName, unit)
     
     const analysisChart = echarts.init(chartContainer);
     
+    // 获取当前主题
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    // 根据主题获取颜色配置
+    const themeConfig = theme === 'dark' ? {
+        textColor: '#e0e0e0',
+        axisLineColor: '#3a3a5a',
+        splitLineColor: 'rgba(255, 255, 255, 0.1)',
+        tooltipBgColor: 'rgba(26, 26, 46, 0.9)',
+        tooltipBorderColor: '#3a3a5a',
+        lineColor: '#3498db',
+        areaColor1: 'rgba(52, 152, 219, 0.3)',
+        areaColor2: 'rgba(52, 152, 219, 0.1)'
+    } : {
+        textColor: '#333',
+        axisLineColor: '#e0e0e0',
+        splitLineColor: 'rgba(0, 0, 0, 0.1)',
+        tooltipBgColor: 'rgba(255, 255, 255, 0.9)',
+        tooltipBorderColor: '#e0e0e0',
+        lineColor: '#4CAF50',
+        areaColor1: 'rgba(76, 175, 80, 0.3)',
+        areaColor2: 'rgba(76, 175, 80, 0.1)'
+    };
+    
     const option = {
         title: {
             text: `${metricName}趋势分析`,
             left: 'center',
             textStyle: {
                 fontSize: 16,
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                color: themeConfig.textColor
             }
         },
         tooltip: {
             trigger: 'axis',
             formatter: function(params) {
                 return `${params[0].name}<br/>${metricName}: ${params[0].value} ${unit}`;
+            },
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.tooltipBorderColor,
+            textStyle: {
+                color: themeConfig.textColor
             }
         },
         grid: {
@@ -137,14 +167,36 @@ export function createAnalysisChart(chartContainer, chartData, metricName, unit)
             boundaryGap: false,
             data: chartData.dates,
             axisLabel: {
-                rotate: 45
+                rotate: 45,
+                color: themeConfig.textColor
+            },
+            axisLine: {
+                lineStyle: {
+                    color: themeConfig.axisLineColor
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: themeConfig.splitLineColor
+                }
             }
         },
         yAxis: {
             type: 'value',
             name: `${metricName} (${unit})`,
             axisLabel: {
-                formatter: `{value} ${unit}`
+                formatter: `{value} ${unit}`,
+                color: themeConfig.textColor
+            },
+            axisLine: {
+                lineStyle: {
+                    color: themeConfig.axisLineColor
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: themeConfig.splitLineColor
+                }
             }
         },
         series: [
@@ -157,20 +209,20 @@ export function createAnalysisChart(chartContainer, chartData, metricName, unit)
                 symbolSize: 6,
                 lineStyle: {
                     width: 2,
-                    color: '#4CAF50'
+                    color: themeConfig.lineColor
                 },
                 itemStyle: {
-                    color: '#4CAF50'
+                    color: themeConfig.lineColor
                 },
                 areaStyle: {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                         {
                             offset: 0,
-                            color: 'rgba(76, 175, 80, 0.3)'
+                            color: themeConfig.areaColor1
                         },
                         {
                             offset: 1,
-                            color: 'rgba(76, 175, 80, 0.1)'
+                            color: themeConfig.areaColor2
                         }
                     ])
                 }

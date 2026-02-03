@@ -10,6 +10,7 @@ import * as chartManager from './chart/index.js';
 
 // 导入模态框模块
 import * as modalManager from './modal/index.js';
+import { updateTrendChartTheme } from './modal/healthTrendModal.js';
 
 // 导入工具函数模块
 import * as healthGoalUtils from './utils/healthGoalUtils.js';
@@ -305,6 +306,9 @@ async function initData() {
     
     // 初始化健康趋势预测模态框
     modalManager.createHealthTrendModal();
+    
+    // 加载主题偏好
+    loadThemePreference();
 }
 
 // 保存数据到localStorage
@@ -488,21 +492,27 @@ function showDailyMetrics(date) {
     const fatRateLevel = dataManager.calculateFatRateLevel(dailyData.fatRate, userInfo.gender);
     const proteinLevel = dataManager.calculateProteinLevel(dailyData.protein);
 
-    // 定义指标风险等级映射，用于直接为数值添加颜色
-    const metricRiskLevels = {
-        '体重': weightLevel,
-        '体脂率': fatRateLevel,
-        'BMI': bmiLevel,
-        '内脏脂肪': visceralFatLevel,
-        '腰臀比': whrLevel,
-        '收缩压': bloodPressureLevel,
-        '舒张压': bloodPressureLevel,
-        '肥胖度': obesityDegreeLevel,
-        '蛋白质': proteinLevel
-    };
-    
-    // 准备所有指标，用"-"占位
-    const allMetrics = [
+    // 获取当前主题的文本颜色
+        const getThemeTextColor = () => {
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+            return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+        };
+        
+        // 定义指标风险等级映射，用于直接为数值添加颜色
+        const metricRiskLevels = {
+            '体重': weightLevel,
+            '体脂率': fatRateLevel,
+            'BMI': bmiLevel,
+            '内脏脂肪': visceralFatLevel,
+            '腰臀比': whrLevel,
+            '收缩压': bloodPressureLevel,
+            '舒张压': bloodPressureLevel,
+            '肥胖度': obesityDegreeLevel,
+            '蛋白质': proteinLevel
+        };
+        
+        // 准备所有指标，用"-"占位
+        const allMetrics = [
         // 基础指标
         { label: '日期', value: date },
         { label: '体重', value: dailyData.weight ? `${dailyData.weight} 斤` : '-' },
@@ -547,14 +557,14 @@ function showDailyMetrics(date) {
     
     allMetrics.forEach(metric => {
         // 根据是否为等级指标和等级值获取颜色
-        let valueColor = '#2c3e50'; // 默认颜色
+        let valueColor = getThemeTextColor(); // 默认颜色
         if (metric.isLevel && metric.value !== '-') {
-            valueColor = levelColors[metric.value] || '#2c3e50';
+            valueColor = levelColors[metric.value] || getThemeTextColor();
         } else {
             // 检查是否是需要根据风险等级着色的数值指标
             const riskLevel = metricRiskLevels[metric.label];
             if (riskLevel && riskLevel !== 'N/A' && metric.value !== '-') {
-                valueColor = levelColors[riskLevel] || '#2c3e50';
+                valueColor = levelColors[riskLevel] || getThemeTextColor();
             }
         }
         
@@ -894,6 +904,88 @@ window.openHealthTrendModal = function() {
     modalManager.showHealthTrendModal();
 };
 
+// 主题设置相关函数
+window.openThemeModal = function() {
+    // 先关闭设置菜单
+    toggleSettingsMenu();
+    // 打开主题设置模态框
+    document.getElementById('themeModal').style.display = 'block';
+    
+    // 添加主题选择事件监听器
+    const themeOptions = document.querySelectorAll('.theme-option');
+    themeOptions.forEach(option => {
+        option.onclick = function() {
+            // 移除所有选项的active类
+            themeOptions.forEach(opt => opt.classList.remove('active'));
+            // 添加当前选项的active类
+            this.classList.add('active');
+            // 获取选中的主题
+            const theme = this.getAttribute('data-theme');
+            // 应用主题
+            applyTheme(theme);
+            // 保存主题偏好
+            saveThemePreference(theme);
+        };
+    });
+};
+
+window.closeThemeModal = function() {
+    document.getElementById('themeModal').style.display = 'none';
+};
+
+// 应用主题
+function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    
+    // 更新主题选项的active状态
+    const themeOptions = document.querySelectorAll('.theme-option');
+    themeOptions.forEach(option => {
+        if (option.getAttribute('data-theme') === theme) {
+            option.classList.add('active');
+        } else {
+            option.classList.remove('active');
+        }
+    });
+    
+    // 更新echarts图表主题
+    updateEChartsTheme(theme);
+}
+
+// 更新echarts图表主题
+function updateEChartsTheme(theme) {
+    // 销毁旧图表实例
+    if (myChart) {
+        myChart.dispose();
+    }
+    
+    // 重新初始化图表，应用新主题
+    myChart = null;
+    updateChart(myChart, rawData, currentMetrics, chartMetrics, userInfo, dataManager.calculateMissingMetrics);
+    
+    // 更新健康趋势预测图表的主题
+    try {
+        updateTrendChartTheme();
+    } catch (error) {
+        console.error('更新健康趋势预测图表主题失败:', error);
+    }
+}
+
+// 保存主题偏好到localStorage
+function saveThemePreference(theme) {
+    localStorage.setItem('THEME_PREFERENCE_KEY', theme);
+}
+
+// 加载主题偏好
+function loadThemePreference() {
+    const savedTheme = localStorage.getItem('THEME_PREFERENCE_KEY');
+    if (savedTheme) {
+        applyTheme(savedTheme);
+    } else {
+        // 默认使用浅色主题
+        applyTheme('light');
+    }
+}
+
 // 更新目标列表
 function updateGoalList() {
     healthGoalUtils.updateGoalList(healthGoals, rawData, userInfo, saveHealthGoals);
@@ -935,17 +1027,51 @@ function exportAsImage() {
         return;
     }
     
-    html2canvas(reportElement, {
-        scale: 2, // 提高清晰度
-        useCORS: true, // 允许加载跨域图片
-        logging: false
-    }).then(canvas => {
-        // 创建下载链接
-        const link = document.createElement('a');
-        link.download = `健康报告_${new Date().toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    });
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            html2canvas(reportElement, {
+                scale: 2, // 提高清晰度
+                useCORS: true, // 允许加载跨域图片
+                logging: false
+            }).then(canvas => {
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `健康报告_${new Date().toISOString().split('T')[0]}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
+        alert('导出失败，请手动截图');
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 导出为PDF
@@ -956,37 +1082,71 @@ function exportAsPDF() {
         return;
     }
     
-    html2canvas(reportElement, {
-        scale: 2,
-        useCORS: true,
-        logging: false
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
         }
         
-        pdf.save(`健康报告_${new Date().toISOString().split('T')[0]}.pdf`);
-    });
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            html2canvas(reportElement, {
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                pdf.save(`健康报告_${new Date().toISOString().split('T')[0]}.pdf`);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
+        alert('导出失败，请手动截图');
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 
@@ -999,22 +1159,53 @@ function exportDailyDataAsImage() {
         return;
     }
     
-    html2canvas(modalBody, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        willReadFrequently: true
-    }).then(canvas => {
-        // 创建下载链接
-        const link = document.createElement('a');
-        const date = document.getElementById('modalTitle').textContent.split(' ')[0];
-        link.download = `${date} 健康数据.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-    }).catch(err => {
-        console.error('导出失败:', err);
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
+        
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            html2canvas(modalBody, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                willReadFrequently: true
+            }).then(canvas => {
+                // 创建下载链接
+                const link = document.createElement('a');
+                const date = document.getElementById('modalTitle').textContent.split(' ')[0];
+                link.download = `${date} 健康数据.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 导出每日健康数据为PDF
@@ -1025,42 +1216,73 @@ function exportDailyDataAsPDF() {
         return;
     }
     
-    html2canvas(modalBody, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        willReadFrequently: true
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
         }
         
-        const date = document.getElementById('modalTitle').textContent.split(' ')[0];
-        pdf.save(`${date} 健康数据.pdf`);
-    }).catch(err => {
-        console.error('导出失败:', err);
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            html2canvas(modalBody, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                willReadFrequently: true
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                const date = document.getElementById('modalTitle').textContent.split(' ')[0];
+                pdf.save(`${date} 健康数据.pdf`);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 获取时间范围文本，用于文件名生成
@@ -1143,48 +1365,79 @@ function exportAnalysisAsImage() {
     // 获取指标名称和单位，用于文件名
     const metricText = getMetricForFilename();
     
-    // 创建一个容器，包含分析结果和图表
-    const exportContainer = document.createElement('div');
-    exportContainer.style.padding = '20px';
-    exportContainer.style.backgroundColor = 'white';
-    exportContainer.style.width = '100%';
-    exportContainer.style.maxWidth = '800px';
-    exportContainer.style.margin = '0 auto';
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     
-    // 添加分析结果
-    exportContainer.appendChild(analysisResults.cloneNode(true));
-    
-    // 添加图表（如果存在）
-    if (analysisChart && analysisChart.innerHTML) {
-        const chartContainer = document.createElement('div');
-        chartContainer.style.marginTop = '20px';
-        chartContainer.appendChild(analysisChart.cloneNode(true));
-        exportContainer.appendChild(chartContainer);
-    }
-    
-    // 将容器添加到页面中，以便html2canvas能够捕获它
-    document.body.appendChild(exportContainer);
-    
-    // 使用html2canvas捕获容器内容
-    html2canvas(exportContainer, {
-        scale: 2, // 提高清晰度
-        useCORS: true, // 允许加载跨域图片
-        logging: false
-    }).then(canvas => {
-        // 创建下载链接
-        const link = document.createElement('a');
-        link.download = `${timeRangeText} ${metricText} 统计分析结果.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
+        }
         
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    }).catch(err => {
-        console.error('导出失败:', err);
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            // 创建一个容器，包含分析结果和图表
+            const exportContainer = document.createElement('div');
+            exportContainer.style.padding = '20px';
+            exportContainer.style.backgroundColor = 'white';
+            exportContainer.style.width = '100%';
+            exportContainer.style.maxWidth = '800px';
+            exportContainer.style.margin = '0 auto';
+            
+            // 添加分析结果
+            exportContainer.appendChild(analysisResults.cloneNode(true));
+            
+            // 添加图表（如果存在）
+            if (analysisChart && analysisChart.innerHTML) {
+                const chartContainer = document.createElement('div');
+                chartContainer.style.marginTop = '20px';
+                chartContainer.appendChild(analysisChart.cloneNode(true));
+                exportContainer.appendChild(chartContainer);
+            }
+            
+            // 将容器添加到页面中，以便html2canvas能够捕获它
+            document.body.appendChild(exportContainer);
+            
+            // 使用html2canvas捕获容器内容
+            html2canvas(exportContainer, {
+                scale: 2, // 提高清晰度
+                useCORS: true, // 允许加载跨域图片
+                logging: false
+            }).then(canvas => {
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `${timeRangeText} ${metricText} 统计分析结果.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 导出分析结果为PDF
@@ -1201,68 +1454,99 @@ function exportAnalysisAsPDF() {
     // 获取指标名称和单位，用于文件名
     const metricText = getMetricForFilename();
     
-    // 创建一个容器，包含分析结果和图表
-    const exportContainer = document.createElement('div');
-    exportContainer.style.padding = '20px';
-    exportContainer.style.backgroundColor = 'white';
-    exportContainer.style.width = '100%';
-    exportContainer.style.maxWidth = '800px';
-    exportContainer.style.margin = '0 auto';
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     
-    // 添加分析结果
-    exportContainer.appendChild(analysisResults.cloneNode(true));
-    
-    // 添加图表（如果存在）
-    if (analysisChart && analysisChart.innerHTML) {
-        const chartContainer = document.createElement('div');
-        chartContainer.style.marginTop = '20px';
-        chartContainer.appendChild(analysisChart.cloneNode(true));
-        exportContainer.appendChild(chartContainer);
-    }
-    
-    // 将容器添加到页面中，以便html2canvas能够捕获它
-    document.body.appendChild(exportContainer);
-    
-    // 使用html2canvas捕获容器内容
-    html2canvas(exportContainer, {
-        scale: 2, // 提高清晰度
-        useCORS: true, // 允许加载跨域图片
-        logging: false
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
         }
         
-        pdf.save(`${timeRangeText} ${metricText} 统计分析结果.pdf`);
-        
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    }).catch(err => {
-        console.error('导出失败:', err);
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            // 创建一个容器，包含分析结果和图表
+            const exportContainer = document.createElement('div');
+            exportContainer.style.padding = '20px';
+            exportContainer.style.backgroundColor = 'white';
+            exportContainer.style.width = '100%';
+            exportContainer.style.maxWidth = '800px';
+            exportContainer.style.margin = '0 auto';
+            
+            // 添加分析结果
+            exportContainer.appendChild(analysisResults.cloneNode(true));
+            
+            // 添加图表（如果存在）
+            if (analysisChart && analysisChart.innerHTML) {
+                const chartContainer = document.createElement('div');
+                chartContainer.style.marginTop = '20px';
+                chartContainer.appendChild(analysisChart.cloneNode(true));
+                exportContainer.appendChild(chartContainer);
+            }
+            
+            // 将容器添加到页面中，以便html2canvas能够捕获它
+            document.body.appendChild(exportContainer);
+            
+            // 使用html2canvas捕获容器内容
+            html2canvas(exportContainer, {
+                scale: 2, // 提高清晰度
+                useCORS: true, // 允许加载跨域图片
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                pdf.save(`${timeRangeText} ${metricText} 统计分析结果.pdf`);
+                
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 导出健康数据比对结果为图片
@@ -1273,58 +1557,89 @@ function exportComparisonAsImage() {
         return;
     }
     
-    // 创建一个容器，包含比对结果
-    const exportContainer = document.createElement('div');
-    exportContainer.style.padding = '20px';
-    exportContainer.style.backgroundColor = 'white';
-    exportContainer.style.width = '100%';
-    exportContainer.style.maxWidth = '800px';
-    exportContainer.style.margin = '0 auto';
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     
-    // 添加比对结果
-    exportContainer.appendChild(comparisonResult.cloneNode(true));
-    
-    // 将容器添加到页面中，以便html2canvas能够捕获它
-    document.body.appendChild(exportContainer);
-    
-    // 使用html2canvas捕获容器内容
-    html2canvas(exportContainer, {
-        scale: 2, // 提高清晰度
-        useCORS: true, // 允许加载跨域图片
-        logging: false
-    }).then(canvas => {
-        // 获取用户选择的日期
-        const date1 = document.getElementById('date1').value;
-        const date2 = document.getElementById('date2').value;
-        
-        // 确定哪个日期更早，与比对结果标题保持一致
-        const isDate1Earlier = new Date(date1) < new Date(date2);
-        const earlierDate = isDate1Earlier ? date1 : date2;
-        const laterDate = isDate1Earlier ? date2 : date1;
-        
-        // 格式化日期为 "YYYY年MM月DD日" 格式
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
         }
         
-        const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
-        const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
-        
-        // 创建下载链接
-        const link = document.createElement('a');
-        link.download = `${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    }).catch(err => {
-        console.error('导出失败:', err);
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            // 创建一个容器，包含比对结果
+            const exportContainer = document.createElement('div');
+            exportContainer.style.padding = '20px';
+            exportContainer.style.backgroundColor = 'white';
+            exportContainer.style.width = '100%';
+            exportContainer.style.maxWidth = '800px';
+            exportContainer.style.margin = '0 auto';
+            
+            // 添加比对结果
+            exportContainer.appendChild(comparisonResult.cloneNode(true));
+            
+            // 将容器添加到页面中，以便html2canvas能够捕获它
+            document.body.appendChild(exportContainer);
+            
+            // 使用html2canvas捕获容器内容
+            html2canvas(exportContainer, {
+                scale: 2, // 提高清晰度
+                useCORS: true, // 允许加载跨域图片
+                logging: false
+            }).then(canvas => {
+                // 获取用户选择的日期
+                const date1 = document.getElementById('date1').value;
+                const date2 = document.getElementById('date2').value;
+                
+                // 确定哪个日期更早，与比对结果标题保持一致
+                const isDate1Earlier = new Date(date1) < new Date(date2);
+                const earlierDate = isDate1Earlier ? date1 : date2;
+                const laterDate = isDate1Earlier ? date2 : date1;
+                
+                // 格式化日期为 "YYYY年MM月DD日" 格式
+                function formatDate(dateStr) {
+                    const date = new Date(dateStr);
+                    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+                }
+                
+                const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
+                const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = `${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 导出健康数据比对结果为PDF
@@ -1335,78 +1650,109 @@ function exportComparisonAsPDF() {
         return;
     }
     
-    // 创建一个容器，包含比对结果
-    const exportContainer = document.createElement('div');
-    exportContainer.style.padding = '20px';
-    exportContainer.style.backgroundColor = 'white';
-    exportContainer.style.width = '100%';
-    exportContainer.style.maxWidth = '800px';
-    exportContainer.style.margin = '0 auto';
+    // 保存当前主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
     
-    // 添加比对结果
-    exportContainer.appendChild(comparisonResult.cloneNode(true));
-    
-    // 将容器添加到页面中，以便html2canvas能够捕获它
-    document.body.appendChild(exportContainer);
-    
-    // 使用html2canvas捕获容器内容
-    html2canvas(exportContainer, {
-        scale: 2, // 提高清晰度
-        useCORS: true, // 允许加载跨域图片
-        logging: false
-    }).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 297;
-        const imgHeight = canvas.height * imgWidth / canvas.width;
-        let heightLeft = imgHeight;
-        
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+    try {
+        // 切换到浅色主题进行导出
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', 'light');
         }
         
-        // 获取用户选择的日期
-        const date1 = document.getElementById('date1').value;
-        const date2 = document.getElementById('date2').value;
-        
-        // 确定哪个日期更早，与比对结果标题保持一致
-        const isDate1Earlier = new Date(date1) < new Date(date2);
-        const earlierDate = isDate1Earlier ? date1 : date2;
-        const laterDate = isDate1Earlier ? date2 : date1;
-        
-        // 格式化日期为 "YYYY年MM月DD日" 格式
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
-        }
-        
-        const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
-        const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
-        
-        pdf.save(`${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.pdf`);
-        
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    }).catch(err => {
-        console.error('导出失败:', err);
+        // 给DOM时间更新主题样式
+        setTimeout(() => {
+            // 创建一个容器，包含比对结果
+            const exportContainer = document.createElement('div');
+            exportContainer.style.padding = '20px';
+            exportContainer.style.backgroundColor = 'white';
+            exportContainer.style.width = '100%';
+            exportContainer.style.maxWidth = '800px';
+            exportContainer.style.margin = '0 auto';
+            
+            // 添加比对结果
+            exportContainer.appendChild(comparisonResult.cloneNode(true));
+            
+            // 将容器添加到页面中，以便html2canvas能够捕获它
+            document.body.appendChild(exportContainer);
+            
+            // 使用html2canvas捕获容器内容
+            html2canvas(exportContainer, {
+                scale: 2, // 提高清晰度
+                useCORS: true, // 允许加载跨域图片
+                logging: false
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210;
+                const pageHeight = 297;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let heightLeft = imgHeight;
+                
+                let position = 0;
+                
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // 获取用户选择的日期
+                const date1 = document.getElementById('date1').value;
+                const date2 = document.getElementById('date2').value;
+                
+                // 确定哪个日期更早，与比对结果标题保持一致
+                const isDate1Earlier = new Date(date1) < new Date(date2);
+                const earlierDate = isDate1Earlier ? date1 : date2;
+                const laterDate = isDate1Earlier ? date2 : date1;
+                
+                // 格式化日期为 "YYYY年MM月DD日" 格式
+                function formatDate(dateStr) {
+                    const date = new Date(dateStr);
+                    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+                }
+                
+                const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
+                const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
+                
+                pdf.save(`${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.pdf`);
+                
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            }).catch(err => {
+                console.error('导出失败:', err);
+                alert('导出失败，请手动截图');
+                // 移除临时容器
+                document.body.removeChild(exportContainer);
+                
+                // 恢复原始主题
+                if (currentTheme !== 'light') {
+                    document.documentElement.setAttribute('data-theme', currentTheme);
+                }
+            });
+        }, 100); // 100ms延迟确保DOM更新
+    } catch (error) {
+        console.error('导出过程出错:', error);
         alert('导出失败，请手动截图');
-        // 移除临时容器
-        document.body.removeChild(exportContainer);
-    });
+        
+        // 恢复原始主题
+        if (currentTheme !== 'light') {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }
+    }
 }
 
 // 暴露导出函数到全局

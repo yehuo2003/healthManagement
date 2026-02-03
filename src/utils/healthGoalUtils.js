@@ -1,6 +1,42 @@
 // 健康目标管理工具函数
 
 /**
+ * 获取当前主题的文本颜色
+ * @returns {string} 当前主题的文本颜色
+ */
+function getThemeTextColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+}
+
+/**
+ * 获取当前主题的背景颜色
+ * @returns {string} 当前主题的背景颜色
+ */
+function getThemeBgColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#1e1e3f' : '#f8f9fa';
+}
+
+/**
+ * 获取当前主题的边框颜色
+ * @returns {string} 当前主题的边框颜色
+ */
+function getThemeBorderColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#3a3a5a' : '#e0e0e0';
+}
+
+/**
+ * 获取当前主题的次要文本颜色
+ * @returns {string} 当前主题的次要文本颜色
+ */
+function getThemeSecondaryTextColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#b0b0b0' : '#7f8c8d';
+}
+
+/**
  * 计算健康目标的进度
  * @param {Object} goal 健康目标对象
  * @param {Array} rawData 原始健康数据
@@ -174,7 +210,7 @@ export function updateGoalList(healthGoals, rawData, userInfo, saveHealthGoals) 
     const goalListContainer = document.getElementById('goalList');
     
     if (healthGoals.length === 0) {
-        goalListContainer.innerHTML = '<div style="text-align: center; color: #7f8c8d; padding: 20px;">暂无设置的目标</div>';
+        goalListContainer.innerHTML = `<div style="text-align: center; color: ${getThemeSecondaryTextColor()}; padding: 20px;">暂无设置的目标</div>`;
         return;
     }
     
@@ -214,12 +250,12 @@ export function updateGoalList(healthGoals, rawData, userInfo, saveHealthGoals) 
         };
         
         html += `
-            <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${statusColor};">
+            <div style="background: ${getThemeBgColor()}; border-radius: 8px; padding: 15px; margin-bottom: 15px; border-left: 4px solid ${statusColor}; border: 1px solid ${getThemeBorderColor()};">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
                     <div>
-                        <h5 style="margin: 0; color: #2c3e50;">${metricName}目标</h5>
-                        <p style="margin: 5px 0; color: #7f8c8d;">从 ${goal.initialValue}${unit} 到 ${goal.targetValue}${unit}</p>
-                        <p style="margin: 5px 0; color: #7f8c8d;">目标日期：${formatDate(goal.targetDate)}</p>
+                        <h5 style="margin: 0; color: ${getThemeTextColor()};">${metricName}目标</h5>
+                        <p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">从 ${goal.initialValue}${unit} 到 ${goal.targetValue}${unit}</p>
+                        <p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">目标日期：${formatDate(goal.targetDate)}</p>
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button onclick="updateHealthGoal('${goal.id}')" style="padding: 5px 10px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">编辑</button>
@@ -228,10 +264,10 @@ export function updateGoalList(healthGoals, rawData, userInfo, saveHealthGoals) 
                 </div>
                 <div style="margin-top: 10px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                        <span style="font-size: 14px; color: #7f8c8d;">完成进度</span>
+                        <span style="font-size: 14px; color: ${getThemeSecondaryTextColor()};">完成进度</span>
                         <span style="font-size: 14px; font-weight: bold; color: ${statusColor};">${goal.progress.toFixed(1)}%</span>
                     </div>
-                    <div style="height: 10px; background: #ecf0f1; border-radius: 5px; overflow: hidden;">
+                    <div style="height: 10px; background: ${getThemeBorderColor()}; border-radius: 5px; overflow: hidden;">
                         <div style="height: 100%; width: ${goal.progress}%; background: ${statusColor}; border-radius: 5px; transition: width 0.3s ease;"></div>
                     </div>
                 </div>

@@ -139,6 +139,26 @@ export function compareHealthData(rawData, userInfo, healthMetricsConfig, levelC
 export function generateComparisonTable(earlierData, laterData, earlierDate, laterDate, userInfo, healthMetricsConfig, levelColors) {
     const resultContainer = document.getElementById('comparisonResult');
     
+    // 获取当前主题的颜色配置
+    const getThemeColors = () => {
+        const theme = document.documentElement.getAttribute('data-theme') || 'light';
+        if (theme === 'dark') {
+            return {
+                bgColor: '#1e1e3f',
+                borderColor: '#3a3a5a',
+                textColor: '#e0e0e0'
+            };
+        } else {
+            return {
+                bgColor: '#f8f9fa',
+                borderColor: '#dee2e6',
+                textColor: '#2c3e50'
+            };
+        }
+    };
+    
+    const themeColors = getThemeColors();
+    
     // 表格样式
     const tableStyle = `
         style="
@@ -151,19 +171,21 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
     
     const thStyle = `
         style="
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
+            background-color: ${themeColors.bgColor};
+            border: 1px solid ${themeColors.borderColor};
             padding: 12px;
             text-align: center;
             font-weight: 600;
+            color: ${themeColors.textColor};
         "
     `;
     
     const tdStyle = `
         style="
-            border: 1px solid #dee2e6;
+            border: 1px solid ${themeColors.borderColor};
             padding: 12px;
             text-align: center;
+            color: ${themeColors.textColor};
         "
     `;
     
@@ -179,7 +201,7 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
     // 生成表格HTML
     let tableHTML = `
         <div style="margin-bottom: 15px;">
-            <h4>数据比对结果：${formatDate(earlierDate)} vs ${formatDate(laterDate)}</h4>
+            <h4 style="color: ${themeColors.textColor};">数据比对结果：${formatDate(earlierDate)} vs ${formatDate(laterDate)}</h4>
         </div>
         <table ${tableStyle}>
             <thead>
@@ -243,12 +265,18 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
                 break;
         }
         
+        // 获取当前主题的文本颜色
+        const getThemeTextColor = () => {
+            const theme = document.documentElement.getAttribute('data-theme') || 'light';
+            return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+        };
+        
         // 获取风险等级对应的颜色
         const getValueColor = (riskLevel, value) => {
             if (value === '-' || !riskLevel || riskLevel === 'N/A') {
-                return '#2c3e50'; // 默认颜色
+                return getThemeTextColor(); // 默认颜色
             }
-            return levelColors[riskLevel] || '#2c3e50';
+            return levelColors[riskLevel] || getThemeTextColor();
         };
         
         // 获取颜色

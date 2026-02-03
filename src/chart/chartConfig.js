@@ -1,6 +1,47 @@
 // 图表配置模块
 
 /**
+ * 获取当前主题
+ * @returns {string} 当前主题名称
+ */
+function getCurrentTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+/**
+ * 根据主题获取图表颜色配置
+ * @returns {Object} 图表颜色配置
+ */
+function getChartThemeConfig() {
+    const theme = getCurrentTheme();
+    
+    if (theme === 'dark') {
+        return {
+            textColor: '#e0e0e0',
+            axisLineColor: '#3a3a5a',
+            splitLineColor: 'rgba(255, 255, 255, 0.1)',
+            tooltipBgColor: 'rgba(26, 26, 46, 0.9)',
+            tooltipBorderColor: '#3a3a5a',
+            dataZoomBgColor: 'rgba(26, 26, 46, 0.5)',
+            dataZoomFillerColor: 'rgba(52, 152, 219, 0.3)',
+            dataZoomHandleColor: '#3498db'
+        };
+    } else {
+        // 浅色主题
+        return {
+            textColor: '#333',
+            axisLineColor: '#e0e0e0',
+            splitLineColor: 'rgba(0, 0, 0, 0.1)',
+            tooltipBgColor: 'rgba(255, 255, 255, 0.9)',
+            tooltipBorderColor: '#e0e0e0',
+            dataZoomBgColor: 'rgba(0, 0, 0, 0.05)',
+            dataZoomFillerColor: 'rgba(52, 152, 219, 0.2)',
+            dataZoomHandleColor: '#3498db'
+        };
+    }
+}
+
+/**
  * 生成图表配置选项
  * @param {Array} series 系列数据
  * @param {Array} dates 日期数据
@@ -9,25 +50,40 @@
  * @returns {Object} 图表配置选项
  */
 export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
+    const themeConfig = getChartThemeConfig();
+    
     return {
         title: {
             text: '健康数据变化趋势',
-            left: 'center'
+            left: 'center',
+            textStyle: {
+                color: themeConfig.textColor
+            }
         },
         tooltip: {
             trigger: 'axis',
             axisPointer: {
                 type: 'cross',
                 label: {
-                    backgroundColor: '#6a7985'
+                    backgroundColor: themeConfig.tooltipBgColor,
+                    borderColor: themeConfig.tooltipBorderColor,
+                    color: themeConfig.textColor
                 }
+            },
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.tooltipBorderColor,
+            textStyle: {
+                color: themeConfig.textColor
             }
         },
         legend: {
             data: series.map(s => s.name),
             bottom: 0,
             selectedMode: 'multiple',
-            show: false
+            show: false,
+            textStyle: {
+                color: themeConfig.textColor
+            }
         },
         grid: {
             left: '3%',
@@ -38,6 +94,9 @@ export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
         toolbox: {
             feature: {
                 saveAsImage: {}
+            },
+            iconStyle: {
+                borderColor: themeConfig.textColor
             }
         },
         xAxis: {
@@ -45,7 +104,18 @@ export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
             boundaryGap: false,
             data: dates,
             axisLabel: {
-                rotate: 0
+                rotate: 0,
+                color: themeConfig.textColor
+            },
+            axisLine: {
+                lineStyle: {
+                    color: themeConfig.axisLineColor
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: themeConfig.splitLineColor
+                }
             }
         },
         yAxis: [
@@ -62,7 +132,13 @@ export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
                     }
                 },
                 axisLabel: {
-                    formatter: '{value}'
+                    formatter: '{value}',
+                    color: themeConfig.textColor
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: themeConfig.splitLineColor
+                    }
                 }
             },
             {
@@ -78,7 +154,11 @@ export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
                     }
                 },
                 axisLabel: {
-                    formatter: '{value}'
+                    formatter: '{value}',
+                    color: themeConfig.textColor
+                },
+                splitLine: {
+                    show: false
                 }
             }
         ],
@@ -93,7 +173,16 @@ export function generateChartOption(series, dates, yAxis0Data, yAxis1Data) {
                 type: 'slider',
                 start: 0,
                 end: 100,
-                bottom: 0
+                bottom: 0,
+                backgroundColor: themeConfig.dataZoomBgColor,
+                fillerColor: themeConfig.dataZoomFillerColor,
+                borderColor: themeConfig.axisLineColor,
+                handleStyle: {
+                    color: themeConfig.dataZoomHandleColor
+                },
+                textStyle: {
+                    color: themeConfig.textColor
+                }
             }
         ],
         series: series,

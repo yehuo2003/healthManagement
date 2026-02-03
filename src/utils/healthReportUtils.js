@@ -1,6 +1,42 @@
 // 健康报告生成工具函数
 
 /**
+ * 获取当前主题的文本颜色
+ * @returns {string} 当前主题的文本颜色
+ */
+function getThemeTextColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+}
+
+/**
+ * 获取当前主题的背景颜色
+ * @returns {string} 当前主题的背景颜色
+ */
+function getThemeBgColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#1e1e3f' : '#f8f9fa';
+}
+
+/**
+ * 获取当前主题的边框颜色
+ * @returns {string} 当前主题的边框颜色
+ */
+function getThemeBorderColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#3a3a5a' : '#e0e0e0';
+}
+
+/**
+ * 获取当前主题的次要文本颜色
+ * @returns {string} 当前主题的次要文本颜色
+ */
+function getThemeSecondaryTextColor() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    return theme === 'dark' ? '#b0b0b0' : '#7f8c8d';
+}
+
+/**
  * 计算指定时间范围内的健康数据趋势
  * @param {Array} rawData 原始健康数据
  * @param {string} timeRange 时间范围
@@ -278,11 +314,11 @@ function renderReportHeader(reportData) {
     
     return `
         <div style="text-align: center; padding: 20px 0; border-bottom: 2px solid #3498db; margin-bottom: 30px;">
-            <h2 style="margin: 0; color: #2c3e50;">${reportTypes[reportData.reportType]}</h2>
-            <p style="margin: 10px 0; color: #7f8c8d;">生成日期：${formattedDate}</p>
-            ${reportData.userInfo.name ? `<p style="margin: 5px 0; color: #7f8c8d;">姓名：${reportData.userInfo.name}</p>` : ''}
-            ${reportData.userInfo.age ? `<p style="margin: 5px 0; color: #7f8c8d;">年龄：${reportData.userInfo.age}岁</p>` : ''}
-            ${reportData.userInfo.gender ? `<p style="margin: 5px 0; color: #7f8c8d;">性别：${reportData.userInfo.gender === 'male' ? '男' : '女'}</p>` : ''}
+            <h2 style="margin: 0; color: ${getThemeTextColor()};">${reportTypes[reportData.reportType]}</h2>
+            <p style="margin: 10px 0; color: ${getThemeSecondaryTextColor()};">生成日期：${formattedDate}</p>
+            ${reportData.userInfo.name ? `<p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">姓名：${reportData.userInfo.name}</p>` : ''}
+            ${reportData.userInfo.age ? `<p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">年龄：${reportData.userInfo.age}岁</p>` : ''}
+            ${reportData.userInfo.gender ? `<p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">性别：${reportData.userInfo.gender === 'male' ? '男' : '女'}</p>` : ''}
         </div>
     `;
 }
@@ -297,8 +333,8 @@ function renderBodyScore(bodyScore) {
     
     return `
         <div style="margin-bottom: 30px; text-align: center;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">身体得分</h3>
-            <div style="background: #f8f9fa; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">身体得分</h3>
+            <div style="background: ${getThemeBgColor()}; padding: 30px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); border: 1px solid ${getThemeBorderColor()};">
                 <div style="font-size: 48px; font-weight: bold; margin: 0; color: ${bodyScore.color};">${bodyScore.score}</div>
                 <div style="font-size: 20px; margin: 10px 0 0 0; color: ${bodyScore.color};">${bodyScore.level}</div>
             </div>
@@ -352,13 +388,13 @@ function renderDataOverview(reportData) {
     
     return `
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">数据概览</h3>
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">数据概览</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                 ${validMetrics.map(metric => {
                     const level = metric.level;
-                    const valueColor = level ? (levelColors[level] || '#2c3e50') : '#2c3e50';
+                    const valueColor = level ? (levelColors[level] || getThemeTextColor()) : getThemeTextColor();
                     return `
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                        <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${getThemeBorderColor()};">
                             <h4 style="margin: 0 0 10px 0; color: #3498db;">${metric.label}</h4>
                             <p style="font-size: 24px; font-weight: bold; margin: 0; color: ${valueColor};">${metric.value}${metric.unit}</p>
                             ${level ? `<p style="font-size: 14px; margin: 5px 0 0 0; color: ${valueColor};">${level}</p>` : ''}
@@ -407,16 +443,16 @@ function renderTrendAnalysis(reportData) {
     
     return `
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">趋势分析</h3>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e0e0e0;">
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">趋势分析</h3>
+            <div style="background: ${getThemeBgColor()}; padding: 20px; border-radius: 8px; border: 1px solid ${getThemeBorderColor()};">
+                <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid ${getThemeBorderColor()};">
                     <h4 style="margin: 0; color: #3498db;">分析时间范围</h4>
-                    <p style="margin: 5px 0 0 0;">${formattedStartDate} - ${formattedEndDate}</p>
+                    <p style="margin: 5px 0 0 0; color: ${getThemeTextColor()};">${formattedStartDate} - ${formattedEndDate}</p>
                 </div>
                 ${validTrendItems.map((item, index) => `
                     <div style="margin-bottom: ${index < validTrendItems.length - 1 ? '20px' : '0'};">
                         <h4 style="margin: 0 0 10px 0; color: #3498db;">${item.label}变化趋势</h4>
-                        <p>从 ${item.trends.start}${item.unit} 到 ${item.trends.end}${item.unit}，${item.trends.change > 0 ? '增加了' : '减少了'} ${Math.abs(item.trends.change).toFixed(1)} ${item.unit}</p>
+                        <p style="color: ${getThemeTextColor()};">从 ${item.trends.start}${item.unit} 到 ${item.trends.end}${item.unit}，${item.trends.change > 0 ? '增加了' : '减少了'} ${Math.abs(item.trends.change).toFixed(1)} ${item.unit}</p>
                     </div>
                 `).join('')}
             </div>
@@ -450,23 +486,23 @@ function renderRiskAssessment(reportData) {
     
     return `
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">风险评估</h3>
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">风险评估</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${getThemeBorderColor()};">
                     <h4 style="margin: 0 0 10px 0; color: #3498db;">BMI等级</h4>
-                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.bmi] || '#2c3e50'};">${riskLevels.bmi}</p>
+                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.bmi] || getThemeTextColor()};">${riskLevels.bmi}</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${getThemeBorderColor()};">
                     <h4 style="margin: 0 0 10px 0; color: #3498db;">体脂率等级</h4>
-                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.fatRate] || '#2c3e50'};">${riskLevels.fatRate}</p>
+                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.fatRate] || getThemeTextColor()};">${riskLevels.fatRate}</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${getThemeBorderColor()};">
                     <h4 style="margin: 0 0 10px 0; color: #3498db;">体重等级</h4>
-                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.weight] || '#2c3e50'};">${riskLevels.weight}</p>
+                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.weight] || getThemeTextColor()};">${riskLevels.weight}</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center;">
+                <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid ${getThemeBorderColor()};">
                     <h4 style="margin: 0 0 10px 0; color: #3498db;">内脏脂肪等级</h4>
-                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.visceralFat] || '#2c3e50'};">${riskLevels.visceralFat}</p>
+                    <p style="font-size: 18px; font-weight: bold; margin: 0; color: ${levelColors[riskLevels.visceralFat] || getThemeTextColor()};">${riskLevels.visceralFat}</p>
                 </div>
             </div>
         </div>
@@ -483,9 +519,9 @@ function renderHealthAdvice(reportData) {
     
     return `
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">健康建议</h3>
-            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                <ul style="margin: 0; padding-left: 20px;">
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">健康建议</h3>
+            <div style="background: ${getThemeBgColor()}; padding: 20px; border-radius: 8px; border: 1px solid ${getThemeBorderColor()};">
+                <ul style="margin: 0; padding-left: 20px; color: ${getThemeTextColor()};">
                     ${healthAdvice.map(advice => `<li style="margin-bottom: 10px;">${advice}</li>`).join('')}
                 </ul>
             </div>
@@ -503,7 +539,7 @@ function renderGoalTracking(reportData) {
     
     return `
         <div style="margin-bottom: 30px;">
-            <h3 style="color: #2c3e50; margin-bottom: 20px;">目标跟踪</h3>
+            <h3 style="color: ${getThemeTextColor()}; margin-bottom: 20px;">目标跟踪</h3>
             <div style="display: flex; flex-direction: column; gap: 15px;">
                 ${goals.map(goal => {
                     // 获取指标名称
@@ -536,12 +572,12 @@ function renderGoalTracking(reportData) {
                     };
                     
                     return `
-                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid ${statusColor};">
+                        <div style="background: ${getThemeBgColor()}; padding: 15px; border-radius: 8px; border-left: 4px solid ${statusColor}; border: 1px solid ${getThemeBorderColor()};">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                                 <div>
-                                    <h4 style="margin: 0; color: #2c3e50;">${metricName}目标</h4>
-                                    <p style="margin: 5px 0; color: #7f8c8d;">从 ${goal.initialValue}${unit} 到 ${goal.targetValue}${unit}</p>
-                                    <p style="margin: 5px 0; color: #7f8c8d;">目标日期：${formatDate(goal.targetDate)}</p>
+                                    <h4 style="margin: 0; color: ${getThemeTextColor()};">${metricName}目标</h4>
+                                    <p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">从 ${goal.initialValue}${unit} 到 ${goal.targetValue}${unit}</p>
+                                    <p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">目标日期：${formatDate(goal.targetDate)}</p>
                                 </div>
                                 <span style="padding: 3px 8px; border-radius: 12px; background: ${statusColor}; color: white;">
                                     ${getGoalStatusText(goal.status)}
@@ -549,10 +585,10 @@ function renderGoalTracking(reportData) {
                             </div>
                             <div style="margin-top: 10px;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                                    <span style="font-size: 14px; color: #7f8c8d;">完成进度</span>
+                                    <span style="font-size: 14px; color: ${getThemeSecondaryTextColor()};">完成进度</span>
                                     <span style="font-size: 14px; font-weight: bold; color: ${statusColor};">${goal.progress.toFixed(1)}%</span>
                                 </div>
-                                <div style="height: 10px; background: #ecf0f1; border-radius: 5px; overflow: hidden;">
+                                <div style="height: 10px; background: ${getThemeBorderColor()}; border-radius: 5px; overflow: hidden;">
                                     <div style="height: 100%; width: ${goal.progress}%; background: ${statusColor}; border-radius: 5px;"></div>
                                 </div>
                             </div>
@@ -571,8 +607,8 @@ function renderGoalTracking(reportData) {
 function renderReportFooter() {
     return `
         <div style="text-align: center; padding: 20px 0; border-top: 2px solid #3498db; margin-top: 30px;">
-            <p style="margin: 0; color: #7f8c8d;">健康报告生成时间：${new Date().toLocaleString('zh-CN')}</p>
-            <p style="margin: 5px 0; color: #7f8c8d;">本报告仅供参考，不构成医疗建议</p>
+            <p style="margin: 0; color: ${getThemeSecondaryTextColor()};">健康报告生成时间：${new Date().toLocaleString('zh-CN')}</p>
+            <p style="margin: 5px 0; color: ${getThemeSecondaryTextColor()};">本报告仅供参考，不构成医疗建议</p>
         </div>
     `;
 }

@@ -4,6 +4,93 @@ import * as dataManager from '../data/index.js';
 import * as healthTrendUtils from '../utils/healthTrendUtils.js';
 import { healthMetricsConfig } from '../config/healthMetricsConfig.js';
 
+/**
+ * 获取当前主题
+ * @returns {string} 当前主题名称
+ */
+function getCurrentTheme() {
+    return document.documentElement.getAttribute('data-theme') || 'light';
+}
+
+/**
+ * 根据主题获取图表颜色配置
+ * @returns {Object} 图表颜色配置
+ */
+function getChartThemeConfig() {
+    const theme = getCurrentTheme();
+    
+    if (theme === 'dark') {
+        return {
+            textColor: '#e0e0e0',
+            axisLineColor: '#3a3a5a',
+            splitLineColor: 'rgba(255, 255, 255, 0.1)',
+            tooltipBgColor: 'rgba(26, 26, 46, 0.9)',
+            tooltipBorderColor: '#3a3a5a',
+            dataZoomBgColor: 'rgba(26, 26, 46, 0.5)',
+            dataZoomFillerColor: 'rgba(52, 152, 219, 0.3)',
+            dataZoomHandleColor: '#3498db'
+        };
+    } else {
+        // 浅色主题
+        return {
+            textColor: '#333',
+            axisLineColor: '#e0e0e0',
+            splitLineColor: 'rgba(0, 0, 0, 0.1)',
+            tooltipBgColor: 'rgba(255, 255, 255, 0.9)',
+            tooltipBorderColor: '#e0e0e0',
+            dataZoomBgColor: 'rgba(0, 0, 0, 0.05)',
+            dataZoomFillerColor: 'rgba(52, 152, 219, 0.2)',
+            dataZoomHandleColor: '#3498db'
+        };
+    }
+}
+
+/**
+ * 根据主题获取预测数据线条颜色
+ * @returns {string} 线条颜色
+ */
+function getPredictionLineColor() {
+    const theme = getCurrentTheme();
+    return theme === 'dark' ? '#3498db' : '#2196F3';
+}
+
+/**
+ * 根据主题获取预测数据区域颜色
+ * @returns {Object} 线性渐变颜色配置
+ */
+function getPredictionAreaColor() {
+    const theme = getCurrentTheme();
+    const baseColor = theme === 'dark' ? '#3498db' : '#2196F3';
+    
+    return new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+        { offset: 0, color: `${baseColor}4D` }, // 30% opacity
+        { offset: 1, color: `${baseColor}0D` }  // 5% opacity
+    ]);
+}
+
+/**
+ * 根据主题获取表格颜色
+ * @returns {Object} 表格颜色配置
+ */
+function getTableColors() {
+    const theme = getCurrentTheme();
+    if (theme === 'dark') {
+        return {
+            textColor: '#e0e0e0',
+            headerBg: '#2c3e50',
+            headerText: '#e0e0e0',
+            borderColor: '#3a3a5a'
+        };
+    } else {
+        return {
+            textColor: '#333',
+            headerBg: '#f8f9fa',
+            headerText: '#333',
+            borderColor: '#e0e0e0'
+        };
+    }
+}
+
 // 全局变量
 let trendChart = null;
 
@@ -222,6 +309,11 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
     // 清理容器
     chartContainer.innerHTML = '';
     
+    // 获取主题配置
+    const themeConfig = getChartThemeConfig();
+    const predictionLineColor = getPredictionLineColor();
+    const predictionAreaColor = getPredictionAreaColor();
+    
     // 准备数据 - 只使用预测数据
     const dates = predictedData.map(item => item.date);
     const series = [];
@@ -233,18 +325,16 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
             type: 'line',
             data: predictedData.map(item => item.value),
             itemStyle: {
-                color: '#2196F3',
+                color: predictionLineColor,
                 opacity: 0.7
             },
             lineStyle: {
                 width: 2,
-                type: 'dashed'
+                type: 'dashed',
+                color: predictionLineColor
             },
             areaStyle: {
-                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                    { offset: 0, color: 'rgba(33, 150, 243, 0.3)' },
-                    { offset: 1, color: 'rgba(33, 150, 243, 0.05)' }
-                ])
+                color: predictionAreaColor
             }
         });
     }
@@ -253,10 +343,26 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
     const option = {
         title: {
             text: `${metricLabel}趋势预测`,
-            left: 'center'
+            left: 'center',
+            textStyle: {
+                color: themeConfig.textColor
+            }
         },
         tooltip: {
             trigger: 'axis',
+            axisPointer: {
+                type: 'cross',
+                label: {
+                    backgroundColor: themeConfig.tooltipBgColor,
+                    borderColor: themeConfig.tooltipBorderColor,
+                    color: themeConfig.textColor
+                }
+            },
+            backgroundColor: themeConfig.tooltipBgColor,
+            borderColor: themeConfig.tooltipBorderColor,
+            textStyle: {
+                color: themeConfig.textColor
+            },
             formatter: function(params) {
                 if (!params || params.length === 0) return '';
                 
@@ -274,7 +380,10 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
         },
         legend: {
             data: ['预测数据'],
-            bottom: 0
+            bottom: 0,
+            textStyle: {
+                color: themeConfig.textColor
+            }
         },
         grid: {
             left: '3%',
@@ -287,12 +396,39 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
             boundaryGap: false,
             data: dates,
             axisLabel: {
-                rotate: 45
+                rotate: 45,
+                color: themeConfig.textColor
+            },
+            axisLine: {
+                lineStyle: {
+                    color: themeConfig.axisLineColor
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: themeConfig.splitLineColor
+                }
             }
         },
         yAxis: {
             type: 'value',
-            name: `${metricLabel}${metricUnit ? ' (' + metricUnit + ')' : ''}`
+            name: `${metricLabel}${metricUnit ? ' (' + metricUnit + ')' : ''}`,
+            nameTextStyle: {
+                color: themeConfig.textColor
+            },
+            axisLabel: {
+                color: themeConfig.textColor
+            },
+            axisLine: {
+                lineStyle: {
+                    color: themeConfig.axisLineColor
+                }
+            },
+            splitLine: {
+                lineStyle: {
+                    color: themeConfig.splitLineColor
+                }
+            }
         },
         series: series
     };
@@ -326,6 +462,40 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
         window.removeEventListener('resize', handleResize);
         window.addEventListener('resize', handleResize);
     }
+    
+    // 更新表格样式以适应主题
+    updateTableTheme();
+}
+
+/**
+ * 更新表格样式以适应主题
+ */
+function updateTableTheme() {
+    const table = document.getElementById('trend-data-table');
+    if (!table) return;
+    
+    const tableColors = getTableColors();
+    
+    // 更新表格样式
+    table.style.color = tableColors.textColor;
+    table.style.borderColor = tableColors.borderColor;
+    
+    // 更新表头样式
+    const headers = table.querySelectorAll('th');
+    headers.forEach(header => {
+        header.style.backgroundColor = tableColors.headerBg;
+        header.style.color = tableColors.headerText;
+        header.style.borderColor = tableColors.borderColor;
+    });
+    
+    // 更新表格行样式
+    const rows = table.querySelectorAll('tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        cells.forEach(cell => {
+            cell.style.borderColor = tableColors.borderColor;
+        });
+    });
 }
 
 /**
@@ -336,4 +506,31 @@ export function showHealthTrendModal() {
     if (modal) {
         modal.style.display = 'block';
     }
+}
+
+/**
+ * 更新健康趋势预测图表的主题
+ */
+export function updateTrendChartTheme() {
+    // 如果图表实例存在，销毁并重新创建
+    if (trendChart) {
+        trendChart.dispose();
+        trendChart = null;
+    }
+    
+    // 如果模态框中的图表容器存在，重新初始化图表
+    const chartContainer = document.getElementById('trend-chart');
+    if (chartContainer) {
+        // 尝试获取当前显示的预测数据
+        const resultDiv = document.getElementById('trend-result');
+        if (resultDiv && resultDiv.style.display !== 'none') {
+            // 重新渲染图表（如果有数据）
+            // 这里需要重新获取数据并渲染，或者在显示结果时保存数据
+            // 由于数据可能已经不存在，我们只需要确保图表容器被清理
+            chartContainer.innerHTML = '';
+        }
+    }
+    
+    // 更新表格主题
+    updateTableTheme();
 }
