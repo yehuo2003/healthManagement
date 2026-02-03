@@ -1103,6 +1103,22 @@ function getTimeRangeForFilename() {
     return '统计分析';
 }
 
+// 获取指标名称和单位，用于文件名生成
+function getMetricForFilename() {
+    const metric = document.getElementById('analysisMetric').value;
+    // 查找指标配置
+    const metricConfig = healthMetricsConfig.find(config => config.key === metric) || {
+        label: metric,
+        unit: ''
+    };
+    
+    // 构建指标字符串，包含标签和单位
+    if (metricConfig.unit) {
+        return `${metricConfig.label}(${metricConfig.unit})`;
+    }
+    return metricConfig.label;
+}
+
 // 导出分析结果为图片
 function exportAnalysisAsImage() {
     const analysisResults = document.getElementById('analysisResults');
@@ -1114,6 +1130,8 @@ function exportAnalysisAsImage() {
     
     // 获取时间范围文本，用于文件名
     const timeRangeText = getTimeRangeForFilename();
+    // 获取指标名称和单位，用于文件名
+    const metricText = getMetricForFilename();
     
     // 创建一个容器，包含分析结果和图表
     const exportContainer = document.createElement('div');
@@ -1145,7 +1163,7 @@ function exportAnalysisAsImage() {
     }).then(canvas => {
         // 创建下载链接
         const link = document.createElement('a');
-        link.download = `${timeRangeText} 统计分析结果.png`;
+        link.download = `${timeRangeText} ${metricText} 统计分析结果.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
         
@@ -1170,6 +1188,8 @@ function exportAnalysisAsPDF() {
     
     // 获取时间范围文本，用于文件名
     const timeRangeText = getTimeRangeForFilename();
+    // 获取指标名称和单位，用于文件名
+    const metricText = getMetricForFilename();
     
     // 创建一个容器，包含分析结果和图表
     const exportContainer = document.createElement('div');
@@ -1223,7 +1243,7 @@ function exportAnalysisAsPDF() {
             heightLeft -= pageHeight;
         }
         
-        pdf.save(`${timeRangeText} 统计分析结果.pdf`);
+        pdf.save(`${timeRangeText} ${metricText} 统计分析结果.pdf`);
         
         // 移除临时容器
         document.body.removeChild(exportContainer);
