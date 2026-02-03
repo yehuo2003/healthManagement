@@ -169,27 +169,22 @@ function displayTrendResult(predictionResult, metric) {
     const trendStrength = document.getElementById('trend-strength');
     const trendAdvice = document.getElementById('trend-advice');
     
-    trendMessage.textContent = trendAnalysis.message;
+    // 构建包含预测结果的消息
+    let message = trendAnalysis.message;
+    if (trendAnalysis.predictedValue !== null) {
+        message += `，预计${predictedData.length}天后的${metricLabel}为${trendAnalysis.predictedValue}${metricUnit}`;
+    }
+    
+    trendMessage.textContent = message;
     trendStrength.textContent = `趋势强度: ${trendAnalysis.strength.toFixed(1)}/10 (R²: ${trendAnalysis.rSquared})`;
     
     // 获取趋势建议
     const advice = healthTrendUtils.getTrendPredictionAdvice(trendAnalysis, metric);
     trendAdvice.textContent = `建议: ${advice}`;
     
-    // 显示数据表格
+    // 显示数据表格 - 只显示预测数据
     const tableBody = document.querySelector('#trend-data-table tbody');
     tableBody.innerHTML = '';
-    
-    // 添加历史数据
-    historicalData.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${item.date}</td>
-            <td>${item.value.toFixed(2)}${metricUnit}</td>
-            <td>历史数据</td>
-        `;
-        tableBody.appendChild(row);
-    });
     
     // 添加预测数据
     predictedData.forEach(item => {
@@ -203,8 +198,8 @@ function displayTrendResult(predictionResult, metric) {
         tableBody.appendChild(row);
     });
     
-    // 绘制趋势图表
-    renderTrendChart(historicalData, predictedData, metricLabel, metricUnit);
+    // 绘制趋势图表 - 只显示预测数据
+    renderTrendChart([], predictedData, metricLabel, metricUnit);
 }
 
 /**
@@ -227,39 +222,16 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
     // 清理容器
     chartContainer.innerHTML = '';
     
-    // 准备数据
-    const allData = [...historicalData, ...predictedData];
-    const dates = allData.map(item => item.date);
-    const values = allData.map(item => item.value);
+    // 准备数据 - 只使用预测数据
+    const dates = predictedData.map(item => item.date);
     const series = [];
-    
-    // 添加历史数据系列
-    if (historicalData.length > 0) {
-        series.push({
-            name: '历史数据',
-            type: 'line',
-            data: historicalData.map(item => item.value),
-            markPoint: {
-                data: [
-                    { type: 'max', name: '最大值' },
-                    { type: 'min', name: '最小值' }
-                ]
-            },
-            itemStyle: {
-                color: '#4CAF50'
-            },
-            lineStyle: {
-                width: 2
-            }
-        });
-    }
     
     // 添加预测数据系列
     if (predictedData.length > 0) {
         series.push({
             name: '预测数据',
             type: 'line',
-            data: Array(historicalData.length).fill(null).concat(predictedData.map(item => item.value)),
+            data: predictedData.map(item => item.value),
             itemStyle: {
                 color: '#2196F3',
                 opacity: 0.7
@@ -301,7 +273,7 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
             }
         },
         legend: {
-            data: ['历史数据', '预测数据'],
+            data: ['预测数据'],
             bottom: 0
         },
         grid: {

@@ -225,7 +225,8 @@ export function analyzePredictionTrend(regressionResult, historicalData, predict
         return {
             direction: 'insufficient_data',
             strength: 0,
-            message: '数据不足，无法分析趋势'
+            message: '数据不足，无法分析趋势',
+            predictedValue: null
         };
     }
     
@@ -249,6 +250,7 @@ export function analyzePredictionTrend(regressionResult, historicalData, predict
     strength = parseFloat(normalizedStrength.toFixed(2));
     
     // 分析预测变化范围
+    let predictedValue = null;
     if (predictedData.length > 0) {
         const lastHistoricalValue = historicalData[historicalData.length - 1].value;
         const lastPredictedValue = predictedData[predictedData.length - 1].value;
@@ -258,13 +260,17 @@ export function analyzePredictionTrend(regressionResult, historicalData, predict
             : 0;
         
         message += `，预计${predictedData.length}天内变化${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}%`;
+        
+        // 保存预测值
+        predictedValue = parseFloat(lastPredictedValue.toFixed(2));
     }
     
     return {
         direction,
         strength,
         message,
-        rSquared: parseFloat(rSquared.toFixed(3))
+        rSquared: parseFloat(rSquared.toFixed(3)),
+        predictedValue: predictedValue
     };
 }
 
