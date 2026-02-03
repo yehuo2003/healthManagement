@@ -4,6 +4,9 @@ import * as dataManager from '../data/index.js';
 import * as healthTrendUtils from '../utils/healthTrendUtils.js';
 import { healthMetricsConfig } from '../config/healthMetricsConfig.js';
 
+// 全局变量
+let trendChart = null;
+
 /**
  * 创建健康趋势预测模态框
  * @returns {HTMLDivElement} 模态框元素
@@ -213,10 +216,16 @@ function displayTrendResult(predictionResult, metric) {
  */
 function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit) {
     const chartContainer = document.getElementById('trend-chart');
-    chartContainer.innerHTML = '';
+    if (!chartContainer) return;
     
-    // 直接使用导入的ECharts模块
-    const chart = echarts.init(chartContainer);
+    // 销毁之前的图表实例
+    if (trendChart) {
+        trendChart.dispose();
+        trendChart = null;
+    }
+    
+    // 清理容器
+    chartContainer.innerHTML = '';
     
     // 准备数据
     const allData = [...historicalData, ...predictedData];
@@ -277,9 +286,16 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
         tooltip: {
             trigger: 'axis',
             formatter: function(params) {
+                if (!params || params.length === 0) return '';
+                
                 let result = params[0].name + '<br/>';
                 params.forEach(item => {
-                    result += `${item.marker}${item.seriesName}: ${item.value.toFixed(2)}${metricUnit}<br/>`;
+                    // 检查item.value是否存在且是数字
+                    if (item.value !== null && item.value !== undefined && typeof item.value === 'number') {
+                        result += `${item.marker}${item.seriesName}: ${item.value.toFixed(2)}${metricUnit}<br/>`;
+                    } else {
+                        result += `${item.marker}${item.seriesName}: 无数据${metricUnit}<br/>`;
+                    }
                 });
                 return result;
             }
@@ -309,17 +325,35 @@ function renderTrendChart(historicalData, predictedData, metricLabel, metricUnit
         series: series
     };
     
-    chart.setOption(option);
+    // 初始化新的图表实例
+    trendChart = echarts.init(chartContainer);
     
-    // 确保图表正确适应容器大小
-    setTimeout(() => {
-        chart.resize();
-    }, 100);
-    
-    // 响应式调整
-    window.addEventListener('resize', () => {
-        chart.resize();
-    });
+    // 检查图表实例是否存在
+    if (trendChart) {
+        trendChart.setOption(option);
+        
+        // 确保图表正确适应容器大小
+        setTimeout(() => {
+            if (trendChart) {
+                trendChart.resize();
+            }
+        }, 100);
+        
+        // 响应式调整 - 使用防抖函数避免频繁调用
+        let resizeTimer;
+        const handleResize = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                if (trendChart) {
+                    trendChart.resize();
+                }
+            }, 100);
+        };
+        
+        // 先移除旧的事件监听器，避免重复绑定
+        window.removeEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize);
+    }
 }
 
 /**

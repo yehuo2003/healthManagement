@@ -63,7 +63,7 @@ describe('健康趋势预测工具函数', () => {
     
     describe('generatePredictionPoints 函数', () => {
         test('应该正确生成预测数据点', () => {
-            const regressionResult = { slope: -2, intercept: 100 };
+            const regressionResult = { slope: -2/7, intercept: 100 };
             const result = healthTrendUtils.generatePredictionPoints(mockHistoricalData, 3, regressionResult);
             
             expect(result).toHaveLength(3);
@@ -72,9 +72,10 @@ describe('健康趋势预测工具函数', () => {
             expect(result[2].isPredicted).toBe(true);
             
             // 预测值应该基于回归方程
-            expect(result[0].value).toBeCloseTo(90, 2); // 5th index: 100 + (-2) * 5
-            expect(result[1].value).toBeCloseTo(88, 2); // 6th index: 100 + (-2) * 6
-            expect(result[2].value).toBeCloseTo(86, 2); // 7th index: 100 + (-2) * 7
+            // 斜率为-2/7，表示每7天减少2斤
+            expect(result[0].value).toBeCloseTo(92 - (2/7)*1, 2); // 第一天预测
+            expect(result[1].value).toBeCloseTo(92 - (2/7)*2, 2); // 第二天预测
+            expect(result[2].value).toBeCloseTo(92 - (2/7)*3, 2); // 第三天预测
         });
         
         test('历史数据为空时应该返回空数组', () => {

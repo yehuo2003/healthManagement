@@ -11,7 +11,14 @@ export function linearRegression(data) {
     }
     
     const n = data.length;
-    const xValues = data.map((_, index) => index);
+    
+    // 使用实际日期差值作为x值，而不是数据点索引
+    const firstDate = new Date(data[0].date);
+    const xValues = data.map(item => {
+        const currentDate = new Date(item.date);
+        return (currentDate - firstDate) / (1000 * 60 * 60 * 24); // 转换为天数
+    });
+    
     const yValues = data.map(item => item.value);
     
     // 计算平均值
@@ -91,15 +98,19 @@ export function generatePredictionPoints(historicalData, predictionDays, regress
     const { slope, intercept } = regressionResult;
     const predictions = [];
     const lastDate = new Date(historicalData[historicalData.length - 1].date);
-    const lastIndex = historicalData.length - 1;
+    
+    // 计算最后一个历史数据点的x值（天数）
+    const firstDate = new Date(historicalData[0].date);
+    const lastXValue = (lastDate - firstDate) / (1000 * 60 * 60 * 24);
     
     // 生成预测数据点
     for (let i = 1; i <= predictionDays; i++) {
         const predictionDate = new Date(lastDate);
         predictionDate.setDate(predictionDate.getDate() + i);
         
-        const predictedIndex = lastIndex + i;
-        const predictedValue = slope * predictedIndex + intercept;
+        // 计算预测日期的x值（天数）
+        const predictedXValue = lastXValue + i;
+        const predictedValue = slope * predictedXValue + intercept;
         
         predictions.push({
             date: predictionDate.toISOString().split('T')[0],
@@ -120,9 +131,8 @@ export function generatePredictionPoints(historicalData, predictionDays, regress
  * @returns {Object} 预测结果
  */
 export function predictHealthTrend(rawData, metric, predictionDays = 30, userInfo = {}) {
-    // 过滤并处理数据
+    // 处理数据 - 对于衍生指标，不直接过滤，而是尝试计算
     const processedData = rawData
-        .filter(item => item[metric] !== null && item[metric] !== undefined)
         .map(item => {
             let value = item[metric];
             
@@ -148,6 +158,12 @@ export function predictHealthTrend(rawData, metric, predictionDays = 30, userInf
                             value = item.waist / item.hip;
                         }
                         break;
+                    case 'muscleRate':
+                        if (item.muscleMass && item.weight) {
+                            // 肌肉率 = (肌肉量 / 体重) * 100
+                            value = (item.muscleMass / (item.weight / 2)) * 100;
+                        }
+                        break;
                 }
             }
             
@@ -156,7 +172,7 @@ export function predictHealthTrend(rawData, metric, predictionDays = 30, userInf
                 value: parseFloat(value) || 0
             };
         })
-        .filter(item => item.value !== 0)
+        .filter(item => item.value !== 0) // 只过滤掉计算后仍然为0的值
         .sort((a, b) => new Date(a.date) - new Date(b.date));
     
     if (processedData.length < 2) {
@@ -172,11 +188,17 @@ export function predictHealthTrend(rawData, metric, predictionDays = 30, userInf
         };
     }
     
+    // 使用最近的数据点（最多10个）来计算趋势，更好地捕捉最近的变化
+    const recentData = processedData.slice(-Math.min(10, processedData.length));
+    
+    // 使用移动平均平滑数据，减少噪声影响
+    const smoothedData = movingAverage(recentData, 3);
+    
     // 计算线性回归
-    const regressionResult = linearRegression(processedData);
+    const regressionResult = linearRegression(smoothedData);
     
     // 生成预测数据
-    const predictedData = generatePredictionPoints(processedData, predictionDays, regressionResult);
+    const predictedData = generatePredictionPoints(smoothedData, predictionDays, regressionResult);
     
     // 分析趋势
     const trendAnalysis = analyzePredictionTrend(regressionResult, processedData, predictedData);
