@@ -13,6 +13,11 @@ export function openDataComparisonModal(toggleSettingsMenu, initDateSelectors) {
     toggleSettingsMenu();
     // 清空之前的比对结果
     document.getElementById('comparisonResult').innerHTML = '';
+    // 隐藏导出按钮
+    const exportButtons = document.getElementById('comparisonExportButtons');
+    if (exportButtons) {
+        exportButtons.style.display = 'none';
+    }
     // 初始化日期选择器
     if (typeof initDateSelectors === 'function') {
         initDateSelectors();
@@ -149,7 +154,7 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             padding: 12px;
-            text-align: left;
+            text-align: center;
             font-weight: 600;
         "
     `;
@@ -292,4 +297,10 @@ export function generateComparisonTable(earlierData, laterData, earlierDate, lat
     
     // 显示表格
     resultContainer.innerHTML = tableHTML;
+    
+    // 显示导出按钮
+    const exportButtons = document.getElementById('comparisonExportButtons');
+    if (exportButtons) {
+        exportButtons.style.display = 'flex';
+    }
 }

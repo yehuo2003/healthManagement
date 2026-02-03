@@ -1255,6 +1255,150 @@ function exportAnalysisAsPDF() {
     });
 }
 
+// 导出健康数据比对结果为图片
+function exportComparisonAsImage() {
+    const comparisonResult = document.getElementById('comparisonResult');
+    if (!comparisonResult || comparisonResult.innerHTML.trim() === '') {
+        alert('暂无比对结果可导出');
+        return;
+    }
+    
+    // 创建一个容器，包含比对结果
+    const exportContainer = document.createElement('div');
+    exportContainer.style.padding = '20px';
+    exportContainer.style.backgroundColor = 'white';
+    exportContainer.style.width = '100%';
+    exportContainer.style.maxWidth = '800px';
+    exportContainer.style.margin = '0 auto';
+    
+    // 添加比对结果
+    exportContainer.appendChild(comparisonResult.cloneNode(true));
+    
+    // 将容器添加到页面中，以便html2canvas能够捕获它
+    document.body.appendChild(exportContainer);
+    
+    // 使用html2canvas捕获容器内容
+    html2canvas(exportContainer, {
+        scale: 2, // 提高清晰度
+        useCORS: true, // 允许加载跨域图片
+        logging: false
+    }).then(canvas => {
+        // 获取用户选择的日期
+        const date1 = document.getElementById('date1').value;
+        const date2 = document.getElementById('date2').value;
+        
+        // 确定哪个日期更早，与比对结果标题保持一致
+        const isDate1Earlier = new Date(date1) < new Date(date2);
+        const earlierDate = isDate1Earlier ? date1 : date2;
+        const laterDate = isDate1Earlier ? date2 : date1;
+        
+        // 格式化日期为 "YYYY年MM月DD日" 格式
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
+        const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.download = `${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    });
+}
+
+// 导出健康数据比对结果为PDF
+function exportComparisonAsPDF() {
+    const comparisonResult = document.getElementById('comparisonResult');
+    if (!comparisonResult || comparisonResult.innerHTML.trim() === '') {
+        alert('暂无比对结果可导出');
+        return;
+    }
+    
+    // 创建一个容器，包含比对结果
+    const exportContainer = document.createElement('div');
+    exportContainer.style.padding = '20px';
+    exportContainer.style.backgroundColor = 'white';
+    exportContainer.style.width = '100%';
+    exportContainer.style.maxWidth = '800px';
+    exportContainer.style.margin = '0 auto';
+    
+    // 添加比对结果
+    exportContainer.appendChild(comparisonResult.cloneNode(true));
+    
+    // 将容器添加到页面中，以便html2canvas能够捕获它
+    document.body.appendChild(exportContainer);
+    
+    // 使用html2canvas捕获容器内容
+    html2canvas(exportContainer, {
+        scale: 2, // 提高清晰度
+        useCORS: true, // 允许加载跨域图片
+        logging: false
+    }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const pageHeight = 297;
+        const imgHeight = canvas.height * imgWidth / canvas.width;
+        let heightLeft = imgHeight;
+        
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        // 获取用户选择的日期
+        const date1 = document.getElementById('date1').value;
+        const date2 = document.getElementById('date2').value;
+        
+        // 确定哪个日期更早，与比对结果标题保持一致
+        const isDate1Earlier = new Date(date1) < new Date(date2);
+        const earlierDate = isDate1Earlier ? date1 : date2;
+        const laterDate = isDate1Earlier ? date2 : date1;
+        
+        // 格式化日期为 "YYYY年MM月DD日" 格式
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+        }
+        
+        const formattedEarlierDate = earlierDate ? formatDate(earlierDate) : '';
+        const formattedLaterDate = laterDate ? formatDate(laterDate) : '';
+        
+        pdf.save(`${formattedEarlierDate} vs ${formattedLaterDate} 健康数据比对结果.pdf`);
+        
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    }).catch(err => {
+        console.error('导出失败:', err);
+        alert('导出失败，请手动截图');
+        // 移除临时容器
+        document.body.removeChild(exportContainer);
+    });
+}
+
 // 暴露导出函数到全局
 window.exportAsImage = exportAsImage;
 window.exportAsPDF = exportAsPDF;
@@ -1263,6 +1407,8 @@ window.exportDailyDataAsImage = exportDailyDataAsImage;
 window.exportDailyDataAsPDF = exportDailyDataAsPDF;
 window.exportAnalysisAsImage = exportAnalysisAsImage;
 window.exportAnalysisAsPDF = exportAnalysisAsPDF;
+window.exportComparisonAsImage = exportComparisonAsImage;
+window.exportComparisonAsPDF = exportComparisonAsPDF;
 
 // 暴露全局变量，供其他模块使用
 window.rawData = rawData;

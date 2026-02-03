@@ -218,8 +218,12 @@
                             <!-- 日期选项将通过JavaScript动态生成 -->
                         </select>
                     </div>
-                    <div style="display: flex; align-items: flex-end;">
+                    <div style="display: flex; align-items: flex-end; gap: 10px;">
                         <button onclick="compareHealthData()" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">开始比对</button>
+                        <div id="comparisonExportButtons" style="display: none; gap: 10px; align-items: center;">
+                            <button onclick="exportComparisonAsImage()" style="padding: 8px 16px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">导出为图片</button>
+                            <button onclick="exportComparisonAsPDF()" style="padding: 8px 16px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">导出为PDF</button>
+                        </div>
                     </div>
                 </div>
                 
