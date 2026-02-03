@@ -302,6 +302,9 @@ async function initData() {
     addChartClickEvent();
     // 初始化图表缩放事件
     addChartZoomEvent();
+    
+    // 初始化健康趋势预测模态框
+    modalManager.createHealthTrendModal();
 }
 
 // 保存数据到localStorage
@@ -882,6 +885,13 @@ window.performAnalysis = function() {
 
 window.exportAnalysisResults = function() {
     modalManager.exportAnalysisResults();
+};
+
+// 健康趋势预测模态框控制函数
+window.openHealthTrendModal = function() {
+    // 先关闭设置菜单
+    toggleSettingsMenu();
+    modalManager.showHealthTrendModal();
 };
 
 // 更新目标列表

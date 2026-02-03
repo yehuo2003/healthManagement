@@ -2,7 +2,7 @@
  * @Author: LinZhuMing
  * @Date: 2026-01-31 14:49:58
  * @LastEditors: LinZhuMing
- * @LastEditTime: 2026-02-02 17:03:41
+ * @LastEditTime: 2026-02-03 14:47:19
  * @FilePath: \healthManagement\src\modal\index.js
  * @Description: 
  * 
@@ -14,6 +14,7 @@ import { openPersonalInfoModal, closePersonalInfoModal } from './personalInfoMod
 import { openHealthDataModal, closeHealthDataModal } from './healthDataModal.js';
 import { openDataComparisonModal, closeDataComparisonModal, compareHealthData, initDateSelectors } from './dataComparisonModal.js';
 import { openStatisticalAnalysisModal, closeStatisticalAnalysisModal, performAnalysis, exportAnalysisResults } from './statisticalAnalysisModal.js';
+import { createHealthTrendModal, showHealthTrendModal } from './healthTrendModal.js';
 
 // 导出所有模态框相关的函数
 export {
@@ -28,5 +29,7 @@ export {
     openStatisticalAnalysisModal,
     closeStatisticalAnalysisModal,
     performAnalysis,
-    exportAnalysisResults
+    exportAnalysisResults,
+    createHealthTrendModal,
+    showHealthTrendModal
 };
