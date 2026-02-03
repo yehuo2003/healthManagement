@@ -5,8 +5,13 @@
  * @returns {string} 当前主题的文本颜色
  */
 function getThemeTextColor() {
-    const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+    try {
+        const theme = document.documentElement?.getAttribute('data-theme') || 'light';
+        return theme === 'dark' ? '#e0e0e0' : '#2c3e50';
+    } catch (error) {
+        // 在测试环境中返回默认浅色主题颜色
+        return '#2c3e50';
+    }
 }
 
 /**
@@ -14,8 +19,13 @@ function getThemeTextColor() {
  * @returns {string} 当前主题的背景颜色
  */
 function getThemeBgColor() {
-    const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    return theme === 'dark' ? '#1e1e3f' : '#f8f9fa';
+    try {
+        const theme = document.documentElement?.getAttribute('data-theme') || 'light';
+        return theme === 'dark' ? '#1e1e3f' : '#f8f9fa';
+    } catch (error) {
+        // 在测试环境中返回默认浅色主题颜色
+        return '#f8f9fa';
+    }
 }
 
 /**
@@ -23,8 +33,13 @@ function getThemeBgColor() {
  * @returns {string} 当前主题的边框颜色
  */
 function getThemeBorderColor() {
-    const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    return theme === 'dark' ? '#3a3a5a' : '#e0e0e0';
+    try {
+        const theme = document.documentElement?.getAttribute('data-theme') || 'light';
+        return theme === 'dark' ? '#3a3a5a' : '#e0e0e0';
+    } catch (error) {
+        // 在测试环境中返回默认浅色主题颜色
+        return '#e0e0e0';
+    }
 }
 
 /**
@@ -32,8 +47,13 @@ function getThemeBorderColor() {
  * @returns {string} 当前主题的次要文本颜色
  */
 function getThemeSecondaryTextColor() {
-    const theme = document.documentElement.getAttribute('data-theme') || 'light';
-    return theme === 'dark' ? '#b0b0b0' : '#7f8c8d';
+    try {
+        const theme = document.documentElement?.getAttribute('data-theme') || 'light';
+        return theme === 'dark' ? '#b0b0b0' : '#7f8c8d';
+    } catch (error) {
+        // 在测试环境中返回默认浅色主题颜色
+        return '#7f8c8d';
+    }
 }
 
 /**
