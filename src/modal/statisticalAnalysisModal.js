@@ -196,6 +196,10 @@ function displayAnalysisResults(report, metric) {
                     <span class="stat-label">标准差</span>
                     <span class="stat-value">${report.totalStats.standardDeviation}</span>
                 </div>
+                <div class="stat-item">
+                    <span class="stat-label">极差</span>
+                    <span class="stat-value">${report.totalStats.range} ${metricConfig.unit}</span>
+                </div>
             </div>
         </div>
         
@@ -226,7 +230,7 @@ function displayAnalysisResults(report, metric) {
                         <thead>
                             <tr>
                                 <th>周期</th>
-                                ${report.statType === 'weekly' ? '<th>前值</th><th>当前值</th><th>变化</th><th>变化率</th>' : '<th>平均值</th><th>最大值</th><th>最小值</th><th>标准差</th>'}
+                                ${report.statType === 'weekly' ? '<th>前值</th><th>当前值</th><th>变化</th><th>变化率</th>' : '<th>平均值</th><th>最大值</th><th>最小值</th><th>标准差</th><th>极差</th>'}
                             </tr>
                         </thead>
                         <tbody>
@@ -241,7 +245,8 @@ function displayAnalysisResults(report, metric) {
                                         `<td>${item.average} ${metricConfig.unit}</td>
                                         <td>${item.max} ${metricConfig.unit}</td>
                                         <td>${item.min} ${metricConfig.unit}</td>
-                                        <td>${item.standardDeviation || 0}</td>`
+                                        <td>${item.standardDeviation || 0}</td>
+                                        <td>${item.range || 0} ${metricConfig.unit}</td>`
                                     }
                                 </tr>
                             `).join('')}

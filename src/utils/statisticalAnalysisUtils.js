@@ -111,7 +111,8 @@ export function calculateMetricStats(data, metric) {
             min: 0,
             median: 0,
             sum: 0,
-            standardDeviation: 0
+            standardDeviation: 0,
+            range: 0
         };
     }
     
@@ -129,6 +130,9 @@ export function calculateMetricStats(data, metric) {
     const variance = squaredDifferences.reduce((acc, val) => acc + val, 0) / values.length;
     const standardDeviation = Math.sqrt(variance);
     
+    // 计算极差
+    const range = max - min;
+    
     return {
         count: values.length,
         average: parseFloat(average.toFixed(2)),
@@ -136,7 +140,8 @@ export function calculateMetricStats(data, metric) {
         min: parseFloat(min.toFixed(2)),
         median: parseFloat(median.toFixed(2)),
         sum: parseFloat(sum.toFixed(2)),
-        standardDeviation: parseFloat(standardDeviation.toFixed(2))
+        standardDeviation: parseFloat(standardDeviation.toFixed(2)),
+        range: parseFloat(range.toFixed(2))
     };
 }
 

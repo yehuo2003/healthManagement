@@ -94,6 +94,7 @@ describe('统计分析工具模块测试', () => {
             expect(result.max).toBe(140);
             expect(result.min).toBe(130);
             expect(result.average).toBeCloseTo(135, 1);
+            expect(result.range).toBe(10); // 140 - 130 = 10
         });
 
         test('当数据为空时应该返回默认值', () => {
@@ -106,6 +107,7 @@ describe('统计分析工具模块测试', () => {
             expect(result.median).toBe(0);
             expect(result.sum).toBe(0);
             expect(result.standardDeviation).toBe(0);
+            expect(result.range).toBe(0);
         });
 
         test('当指标数据不完整时应该过滤掉无效值', () => {
@@ -118,6 +120,7 @@ describe('统计分析工具模块测试', () => {
             
             expect(result.count).toBe(2);
             expect(result.average).toBe(138);
+            expect(result.range).toBe(4); // 140 - 136 = 4
         });
     });
 
@@ -346,6 +349,32 @@ describe('统计分析工具模块测试', () => {
             );
             
             expect(result.statType).toBe('quarterly');
+        });
+
+        test('应该支持自定义时间范围', () => {
+            const result = statisticalAnalysisUtils.generateStatisticalReport(
+                mockRawData, 
+                'weight', 
+                'custom', 
+                'monthly',
+                '2026-01-01',
+                '2026-02-01'
+            );
+            
+            expect(result.timeRange).toBe('custom');
+            expect(Array.isArray(result.statsData)).toBe(true);
+        });
+
+        test('应该支持周平均变化率统计类型', () => {
+            const result = statisticalAnalysisUtils.generateStatisticalReport(
+                mockRawData, 
+                'weight', 
+                'all', 
+                'weekly'
+            );
+            
+            expect(result.statType).toBe('weekly');
+            expect(Array.isArray(result.statsData)).toBe(true);
         });
     });
 });
