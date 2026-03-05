@@ -1,5 +1,7 @@
 // 健康数据录入模态框模块
 
+import * as dataManager from '../data/index.js';
+
 /**
  * 打开健康数据录入模态框
  * @param {Function} toggleSettingsMenu 切换设置菜单的函数
@@ -7,7 +9,33 @@
 export function openHealthDataModal(toggleSettingsMenu) {
     // 先关闭设置菜单
     toggleSettingsMenu();
+    
+    // 生成自定义指标输入字段
+    generateCustomMetricInputs();
+    
     document.getElementById('healthDataModal').style.display = 'block';
+}
+
+/**
+ * 生成自定义指标输入字段
+ */
+export function generateCustomMetricInputs() {
+    const customMetrics = dataManager.getCustomMetrics();
+    const customMetricsContainer = document.getElementById('customMetricsContainer');
+    
+    if (customMetricsContainer) {
+        if (customMetrics.length === 0) {
+            customMetricsContainer.innerHTML = '<div class="no-custom-metrics">暂无自定义指标</div>';
+        } else {
+            customMetricsContainer.innerHTML = customMetrics.map(metric => `
+                <div class="custom-metric-input">
+                    <label for="input${metric.key}">${metric.label}</label>
+                    <input type="number" id="input${metric.key}" placeholder="请输入${metric.label}" step="0.1">
+                    <span class="unit">${metric.unit}</span>
+                </div>
+            `).join('');
+        }
+    }
 }
 
 /**
@@ -62,6 +90,16 @@ export function addData(rawData, recalculateAllDerivedMetrics, updateChart, upda
         diastolic: diastolic || null,
         heartRate: heartRate || null
     };
+    
+    // 添加自定义指标数据
+    const customMetrics = dataManager.getCustomMetrics();
+    customMetrics.forEach(metric => {
+        const inputElement = document.getElementById(`input${metric.key}`);
+        if (inputElement) {
+            const value = parseFloat(inputElement.value);
+            newData[metric.key] = isNaN(value) ? null : value;
+        }
+    });
     
     // 检查是否已存在该日期的数据
     const existingIndex = rawData.findIndex(item => item.date === date);

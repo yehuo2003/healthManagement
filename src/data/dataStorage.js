@@ -3,6 +3,7 @@
 const STORAGE_KEY = 'healthData';
 const USER_INFO_KEY = 'userHealthInfo';
 const HEALTH_GOALS_KEY = 'healthGoals';
+const CUSTOM_METRICS_KEY = 'customMetrics';
 
 /**
  * 从本地存储获取数据
@@ -104,4 +105,35 @@ export function getHealthGoals() {
  */
 export function saveHealthGoals(healthGoals) {
     saveToStorage(HEALTH_GOALS_KEY, healthGoals);
+}
+
+/**
+ * 获取自定义指标配置
+ * @returns {Array} 自定义指标配置
+ */
+export function getCustomMetrics() {
+    return getFromStorage(CUSTOM_METRICS_KEY) || [];
+}
+
+/**
+ * 保存自定义指标配置
+ * @param {Array} customMetrics 自定义指标配置
+ */
+export function saveCustomMetrics(customMetrics) {
+    saveToStorage(CUSTOM_METRICS_KEY, customMetrics);
+}
+
+/**
+ * 导出数据
+ * @param {Array} rawData 原始数据
+ */
+export function exportData(rawData) {
+    const dataStr = JSON.stringify(rawData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `health-data-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
 }

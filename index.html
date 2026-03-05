@@ -25,6 +25,7 @@
                     <a href="#" onclick="openHealthReportModal()">健康报告生成</a>
                     <a href="#" onclick="openStatisticalAnalysisModal()">高级数据统计分析</a>
                     <a href="#" onclick="openHealthTrendModal()">健康趋势预测</a>
+                    <a href="#" onclick="openCustomMetricsModal()">自定义指标</a>
                     <a href="#" onclick="openThemeModal()">主题设置</a>
                 </div>
             </div>
@@ -184,7 +185,16 @@
                         <input type="number" id="inputHeartRate" placeholder="静息心率" step="1">
                     </div>
                 </div>
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                
+                <!-- 自定义指标输入区域 -->
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                    <h4>自定义指标</h4>
+                    <div id="customMetricsContainer" style="margin-top: 15px;">
+                        <!-- 自定义指标输入字段将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; margin-top: 20px;">
                     <button onclick="addData()" style="padding: 8px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">添加/更新数据</button>
                 </div>
                 <div style="display: flex; gap: 10px;">
@@ -446,6 +456,53 @@
                     <div class="theme-option" data-theme="dark">
                         <div class="theme-name">深色模式</div>
                         <div class="theme-preview dark">深色主题预览</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 自定义指标管理模态框 -->
+    <div id="customMetricsModal" class="modal">
+        <div class="modal-content" style="width: 90%; max-width: 800px;">
+            <div class="modal-header">
+                <h3>自定义指标管理</h3>
+                <button class="close-button" onclick="closeCustomMetricsModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 自定义指标添加/编辑表单 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>添加/编辑自定义指标</h4>
+                    <form id="customMetricForm" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <input type="hidden" id="editMetricId" value="">
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="metricLabel">指标名称</label>
+                            <input type="text" id="metricLabel" placeholder="请输入指标名称" required style="padding: 8px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="metricUnit">单位</label>
+                            <input type="text" id="metricUnit" placeholder="请输入单位" style="padding: 8px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="metricShowChange">显示变化值</label>
+                            <input type="checkbox" id="metricShowChange" checked style="margin-top: 8px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="metricColor">图表颜色</label>
+                            <input type="color" id="metricColor" value="#3498db" style="padding: 4px;">
+                        </div>
+                        <div style="grid-column: 1 / -1; margin-top: 10px;">
+                            <button type="button" onclick="saveCustomMetric()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">保存指标</button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 自定义指标列表 -->
+                <div style="margin-bottom: 30px;">
+                    <h4>已添加的自定义指标</h4>
+                    <div id="customMetricsList" style="margin-top: 15px;">
+                        <!-- 自定义指标列表将通过JavaScript动态生成 -->
+                        <div style="text-align: center; color: #7f8c8d; padding: 40px;">暂无自定义指标</div>
                     </div>
                 </div>
             </div>

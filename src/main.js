@@ -24,6 +24,7 @@ import { healthMetricsConfig, levelColors, chartMetrics, STORAGE_KEY, USER_INFO_
 let rawData = [];
 let userInfo = {};
 let healthGoals = [];
+let customMetrics = [];
 let currentMetrics = ['weight', 'fatRate'];
 let myChart = null;
 
@@ -71,6 +72,37 @@ window.openHealthDataModal = function() {
 
 window.closeHealthDataModal = function() {
     modalManager.closeHealthDataModal();
+};
+
+// 自定义指标管理模态框控制函数
+window.openCustomMetricsModal = function() {
+    modalManager.openCustomMetricsModal(toggleSettingsMenu);
+};
+
+window.closeCustomMetricsModal = function() {
+    modalManager.closeCustomMetricsModal();
+};
+
+window.saveCustomMetric = function() {
+    modalManager.saveCustomMetric(updateMetrics, updateChart);
+    // 重新加载自定义指标
+    customMetrics = dataManager.getCustomMetrics();
+    window.customMetrics = customMetrics;
+    // 重新渲染指标选择器
+    renderMetricSelector();
+};
+
+window.editCustomMetric = function(metricKey) {
+    modalManager.editCustomMetric(metricKey);
+};
+
+window.deleteCustomMetric = function(metricKey) {
+    modalManager.deleteCustomMetric(metricKey, updateMetrics, updateChart);
+    // 重新加载自定义指标
+    customMetrics = dataManager.getCustomMetrics();
+    window.customMetrics = customMetrics;
+    // 重新渲染指标选择器
+    renderMetricSelector();
 };
 
 window.openDataComparisonModal = function() {
@@ -274,6 +306,9 @@ async function initData() {
     
     // 加载健康目标数据
     healthGoals = dataManager.getHealthGoals();
+    
+    // 加载自定义指标配置
+    customMetrics = dataManager.getCustomMetrics();
 
     // 从JSON文件加载最新数据，确保用户修改后能看到更新
     try {
@@ -290,6 +325,7 @@ async function initData() {
     window.rawData = rawData;
     window.userInfo = userInfo;
     window.healthGoals = healthGoals;
+    window.customMetrics = customMetrics;
     
     // 渲染指标选择器
     renderMetricSelector();
@@ -344,12 +380,29 @@ function initDateSelectors() {
 
 // 渲染指标选择器
 function renderMetricSelector() {
+    // 移除现有的指标选择器
+    const existingSelector = document.querySelector('.summary');
+    if (existingSelector) {
+        existingSelector.remove();
+    }
+    
     const selectorContainer = document.createElement('div');
     selectorContainer.className = 'summary';
+    
+    // 合并默认图表指标和自定义指标
+    const allChartMetrics = [...chartMetrics];
+    customMetrics.forEach(metric => {
+        allChartMetrics.push({
+            key: metric.key,
+            name: metric.label,
+            color: metric.color
+        });
+    });
+    
     selectorContainer.innerHTML = `
         <h3>图表指标选择</h3>
         <div class="metric-selector" style="display: flex; flex-wrap: wrap; gap: 10px;">
-            ${chartMetrics.map(metric => `
+            ${allChartMetrics.map(metric => `
                 <label style="display: flex; align-items: center; gap: 5px; padding: 8px 12px; background: ${currentMetrics.includes(metric.key) ? metric.color : '#ecf0f1'}; color: ${currentMetrics.includes(metric.key) ? 'white' : '#333'}; border-radius: 20px; cursor: pointer; transition: all 0.3s;">
                     <input type="checkbox" name="metric" value="${metric.key}" ${currentMetrics.includes(metric.key) ? 'checked' : ''} onchange="toggleMetric('${metric.key}', this.checked)" style="margin: 0;">
                     <span>${metric.name}</span>
@@ -367,7 +420,22 @@ function renderMetricSelector() {
 
 // 更新图表
 function updateChart() {
-    myChart = chartManager.updateChart(myChart, rawData, currentMetrics, chartMetrics, userInfo, dataManager.calculateMissingMetrics);
+    // 合并默认图表指标和自定义指标
+    const allChartMetrics = [...chartMetrics];
+    customMetrics.forEach(metric => {
+        allChartMetrics.push({
+            key: metric.key,
+            name: metric.label,
+            color: metric.color
+        });
+    });
+    
+    myChart = chartManager.updateChart(myChart, rawData, currentMetrics, allChartMetrics, userInfo, dataManager.calculateMissingMetrics);
+    
+    // 重新绑定图表点击事件
+    addChartClickEvent();
+    // 重新绑定图表缩放事件
+    addChartZoomEvent();
 }
 
 // 添加图表点击事件
@@ -511,6 +579,9 @@ function showDailyMetrics(date) {
             '蛋白质': proteinLevel
         };
         
+        // 计算健康状态评分
+        const healthScore = calculateHealthScoreForData(dailyData);
+        
         // 准备所有指标，用"-"占位
         const allMetrics = [
         // 基础指标
@@ -545,8 +616,20 @@ function showDailyMetrics(date) {
         { label: '血压等级', value: bloodPressureLevel && bloodPressureLevel !== 'N/A' ? bloodPressureLevel : '-', isLevel: true },
         { label: '腰臀比等级', value: whrLevel && whrLevel !== 'N/A' ? whrLevel : '-', isLevel: true },
         { label: '内脏脂肪等级', value: visceralFatLevel && visceralFatLevel !== 'N/A' ? visceralFatLevel : '-', isLevel: true },
-        { label: '蛋白质等级', value: proteinLevel && proteinLevel !== 'N/A' ? proteinLevel : '-', isLevel: true }
+        { label: '蛋白质等级', value: proteinLevel && proteinLevel !== 'N/A' ? proteinLevel : '-', isLevel: true },
+        // 健康状态评分
+        { label: '健康状态评分', value: healthScore.score ? `${healthScore.score} 分` : '-', isLevel: true },
+        { label: '健康状态等级', value: healthScore.level && healthScore.level !== 'N/A' ? healthScore.level : '-', isLevel: true }
     ];
+    
+    // 添加自定义指标
+    customMetrics.forEach(metric => {
+        const value = dailyData[metric.key];
+        allMetrics.push({
+            label: metric.label,
+            value: value !== undefined && value !== null ? `${value} ${metric.unit}` : '-'
+        });
+    });
 
     // 更新模态框标题
     const modalTitle = document.getElementById('modalTitle');
@@ -772,6 +855,11 @@ function updateChartByPeriod(period) {
     updateHealthSummaryForPeriod(filteredData);
 }
 
+// 计算健康状态评分
+function calculateHealthScoreForData(dataItem) {
+    return dataManager.calculateHealthScore(dataItem, userInfo);
+}
+
 // 更新指标卡片
 function updateMetricsForPeriod(data) {
     if (data.length === 0) return;
@@ -787,6 +875,9 @@ function updateMetricsForPeriod(data) {
     
     // 计算体脂率变化
     const fatRateChange = (lastData.fatRate || 0) - (firstData.fatRate || 0);
+    
+    // 计算当前健康状态评分
+    const healthScore = calculateHealthScoreForData(lastData);
     
     // 更新指标卡片
     const metricsContainer = document.querySelector('.metrics');
@@ -811,6 +902,11 @@ function updateMetricsForPeriod(data) {
                 <h4>体脂率变化</h4>
                 <div class="value ${fatRateChange < 0 ? 'positive' : 'negative'}">${(firstData.fatRate || 0).toFixed(1)}% → ${(lastData.fatRate || 0).toFixed(1)}%</div>
                 <div class="change ${fatRateChange < 0 ? 'positive' : 'negative'}">${fatRateChange < 0 ? '↓' : '↑'} ${Math.abs(fatRateChange).toFixed(1)}%</div>
+            </div>
+            <div class="metric-card">
+                <h4>健康状态评分</h4>
+                <div class="value health-score">${healthScore.score} 分</div>
+                <div class="change health-level ${healthScore.level}">${healthScore.level}</div>
             </div>
         `;
     }

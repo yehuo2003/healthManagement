@@ -17,7 +17,7 @@ export {
 // 直接导出常用函数
 export * from './dataCalculator.js';
 // 明确导出存储相关函数，避免命名冲突
-export { saveUserInfo, getUserInfo, saveHealthData, getHealthData, saveHealthGoals, getHealthGoals } from './dataStorage.js';
+export { saveUserInfo, getUserInfo, saveHealthData, getHealthData, saveHealthGoals, getHealthGoals, getCustomMetrics, saveCustomMetrics, exportData } from './dataStorage.js';
 // 导出数据加载函数
 export { loadInitialData, loadUserInfo as loadStoredUserInfo, loadHealthGoals as loadStoredHealthGoals, saveData } from './dataLoader.js';
 

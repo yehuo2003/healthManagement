@@ -156,6 +156,43 @@ h1 {
     color: var(--error-color);
 }
 
+/* 健康状态评分相关样式 */
+.metric-card .health-score {
+    font-size: 28px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3498db, #2ecc71);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 5px;
+}
+
+.metric-card .health-level {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* 健康状态等级颜色 */
+.health-level.优秀 {
+    color: var(--success-color);
+}
+
+.health-level.良好 {
+    color: #27ae60;
+}
+
+.health-level.一般 {
+    color: var(--warning-color);
+}
+
+.health-level.需改善 {
+    color: #e67e22;
+}
+
+.health-level.较差 {
+    color: var(--error-color);
+}
+
 .period-toggle {
     display: flex;
     justify-content: center;

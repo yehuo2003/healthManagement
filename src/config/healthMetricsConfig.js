@@ -4,7 +4,8 @@
  * 健康数据指标配置
  * 包含所有健康指标的定义、标签、单位等信息
  */
-export const healthMetricsConfig = [
+// 默认健康数据指标配置
+export const defaultMetrics = [
     { key: 'date', label: '日期', unit: '', showChange: false },
     { key: 'weight', label: '体重', unit: '斤', showChange: true },
     { key: 'fatRate', label: '体脂率', unit: '%', showChange: true },
@@ -27,3 +28,6 @@ export const healthMetricsConfig = [
     { key: 'heartRate', label: '静息心率', unit: '次/分', showChange: true },
     { key: 'whr', label: '腰臀比', unit: '', showChange: true },
 ];
+
+// 导出默认指标配置作为 healthMetricsConfig，保持向后兼容
+export const healthMetricsConfig = defaultMetrics;

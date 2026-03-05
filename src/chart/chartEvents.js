@@ -40,6 +40,9 @@ export function addChartClickEvent(myChart, showDailyMetrics, rawData) {
         function handleChartDomClick(e) {
             // 使用ECharts API从点击位置获取数据
             try {
+                // 检查图表实例是否有效
+                if (!myChart || myChart.isDisposed()) return;
+                
                 // 获取点击位置相对于图表容器的坐标
                 const rect = chartDom.getBoundingClientRect();
                 const x = e.clientX - rect.left;

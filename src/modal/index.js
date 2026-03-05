@@ -15,6 +15,7 @@ import { openHealthDataModal, closeHealthDataModal } from './healthDataModal.js'
 import { openDataComparisonModal, closeDataComparisonModal, compareHealthData, initDateSelectors } from './dataComparisonModal.js';
 import { openStatisticalAnalysisModal, closeStatisticalAnalysisModal, performAnalysis, exportAnalysisResults } from './statisticalAnalysisModal.js';
 import { createHealthTrendModal, showHealthTrendModal } from './healthTrendModal.js';
+import { openCustomMetricsModal, closeCustomMetricsModal, saveCustomMetric, editCustomMetric, deleteCustomMetric, updateCustomMetricsList } from './customMetricsModal.js';
 
 // 导出所有模态框相关的函数
 export {
@@ -31,5 +32,11 @@ export {
     performAnalysis,
     exportAnalysisResults,
     createHealthTrendModal,
-    showHealthTrendModal
+    showHealthTrendModal,
+    openCustomMetricsModal,
+    closeCustomMetricsModal,
+    saveCustomMetric,
+    editCustomMetric,
+    deleteCustomMetric,
+    updateCustomMetricsList
 };

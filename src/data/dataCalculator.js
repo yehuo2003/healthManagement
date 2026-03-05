@@ -336,3 +336,160 @@ export function calculateProteinLevel(protein) {
     if (proteinNum >= 16.0 && proteinNum <= 20.0) return '标准';
     return '优';
 }
+
+/**
+ * 计算健康状态评分
+ * @param {Object} dataItem 健康数据项
+ * @param {Object} userInfo 用户信息
+ * @returns {Object} 健康状态评分结果
+ */
+export function calculateHealthScore(dataItem, userInfo) {
+    if (!dataItem) return { score: 0, level: 'N/A', breakdown: {} };
+    
+    // 各项指标的权重
+    const weights = {
+        bmi: 0.25,           // BMI权重最高
+        bloodPressure: 0.20,  // 血压权重次之
+        fatRate: 0.15,        // 体脂率
+        visceralFat: 0.10,     // 内脏脂肪
+        whr: 0.10,             // 腰臀比
+        muscleRate: 0.05,      // 肌肉率
+        protein: 0.05,         // 蛋白质
+        obesityDegree: 0.10    // 肥胖度
+    };
+    
+    // 初始化各项指标分数
+    const scores = {
+        bmi: 0,
+        bloodPressure: 0,
+        fatRate: 0,
+        visceralFat: 0,
+        whr: 0,
+        muscleRate: 0,
+        protein: 0,
+        obesityDegree: 0
+    };
+    
+    // 计算BMI分数
+    if (dataItem.bmi) {
+        const bmiLevel = calculateBMILevel(dataItem.bmi);
+        scores.bmi = calculateLevelScore(bmiLevel);
+    }
+    
+    // 计算血压分数
+    if (dataItem.systolic && dataItem.diastolic) {
+        const bpLevel = calculateBloodPressureLevel(dataItem.systolic, dataItem.diastolic);
+        scores.bloodPressure = calculateLevelScore(bpLevel);
+    }
+    
+    // 计算体脂率分数
+    if (dataItem.fatRate && userInfo.gender) {
+        const fatRateLevel = calculateFatRateLevel(dataItem.fatRate, userInfo.gender);
+        scores.fatRate = calculateLevelScore(fatRateLevel);
+    }
+    
+    // 计算内脏脂肪分数
+    if (dataItem.visceralFat) {
+        const visceralFatLevel = calculateVisceralFatLevel(dataItem.visceralFat);
+        scores.visceralFat = calculateLevelScore(visceralFatLevel);
+    }
+    
+    // 计算腰臀比分数
+    if (dataItem.whr && userInfo.gender) {
+        const whrLevel = calculateWHRLevel(dataItem.whr, userInfo.gender);
+        scores.whr = calculateLevelScore(whrLevel);
+    }
+    
+    // 计算肌肉率分数（简化计算，假设肌肉率在30-40%之间为正常）
+    if (dataItem.muscleRate) {
+        const muscleRateNum = parseFloat(dataItem.muscleRate);
+        if (muscleRateNum >= 30 && muscleRateNum <= 40) {
+            scores.muscleRate = 100;
+        } else if (muscleRateNum >= 25 && muscleRateNum < 30 || muscleRateNum > 40 && muscleRateNum <= 45) {
+            scores.muscleRate = 80;
+        } else if (muscleRateNum >= 20 && muscleRateNum < 25 || muscleRateNum > 45 && muscleRateNum <= 50) {
+            scores.muscleRate = 60;
+        } else {
+            scores.muscleRate = 40;
+        }
+    }
+    
+    // 计算蛋白质分数
+    if (dataItem.protein) {
+        const proteinLevel = calculateProteinLevel(dataItem.protein);
+        scores.protein = calculateLevelScore(proteinLevel);
+    }
+    
+    // 计算肥胖度分数
+    if (dataItem.obesityDegree) {
+        const obesityLevel = calculateObesityDegreeLevel(dataItem.obesityDegree);
+        scores.obesityDegree = calculateLevelScore(obesityLevel);
+    }
+    
+    // 计算加权平均分
+    let totalScore = 0;
+    let totalWeight = 0;
+    
+    Object.keys(weights).forEach(key => {
+        if (scores[key] > 0) {
+            totalScore += scores[key] * weights[key];
+            totalWeight += weights[key];
+        }
+    });
+    
+    // 处理所有指标都缺失的情况
+    if (totalWeight === 0) {
+        return { score: 0, level: 'N/A', breakdown: scores };
+    }
+    
+    // 计算最终评分（0-100分）
+    const finalScore = Math.round((totalScore / totalWeight));
+    const healthLevel = calculateHealthStatusLevel(finalScore);
+    
+    return { score: finalScore, level: healthLevel, breakdown: scores };
+}
+
+/**
+ * 根据风险等级计算分数
+ * @param {string} level 风险等级
+ * @returns {number} 分数（0-100）
+ */
+function calculateLevelScore(level) {
+    switch (level) {
+        case '正常':
+        case '标准':
+        case '优':
+            return 100;
+        case '高血压前期':
+        case '偏瘦':
+        case '偏高':
+            return 80;
+        case '高血压1级':
+        case '超重':
+        case '偏胖':
+        case '不足':
+            return 60;
+        case '高血压2级':
+        case '肥胖':
+        case '中心性肥胖':
+        case '消瘦':
+            return 40;
+        case '重度':
+            return 20;
+        default:
+            return 0;
+    }
+}
+
+/**
+ * 计算健康状态等级
+ * @param {number} score 健康评分
+ * @returns {string} 健康状态等级
+ */
+export function calculateHealthStatusLevel(score) {
+    if (score >= 90) return '优秀';
+    if (score >= 80) return '良好';
+    if (score >= 70) return '一般';
+    if (score >= 60) return '需改善';
+    return '较差';
+}
