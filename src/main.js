@@ -343,8 +343,18 @@ async function initData() {
     // 初始化健康趋势预测模态框
     modalManager.createHealthTrendModal();
     
+    // 初始化备份模态框
+    modalManager.initBackupModal(recalculateAllDerivedMetrics, updateChart, updateMetrics, updateHealthSummary, saveData, loadCustomMetrics);
+    
     // 加载主题偏好
     loadThemePreference();
+}
+
+// 加载自定义指标
+function loadCustomMetrics() {
+    customMetrics = dataManager.getCustomMetrics();
+    window.customMetrics = customMetrics;
+    renderMetricSelector();
 }
 
 // 保存数据到localStorage
@@ -1027,6 +1037,31 @@ window.openThemeModal = function() {
 
 window.closeThemeModal = function() {
     document.getElementById('themeModal').style.display = 'none';
+};
+
+// 备份管理相关函数
+window.openBackupModal = function() {
+    modalManager.openBackupModal(toggleSettingsMenu);
+};
+
+window.closeBackupModal = function() {
+    modalManager.closeBackupModal();
+};
+
+window.saveBackupSettings = function() {
+    modalManager.saveBackupSettings();
+};
+
+window.performManualBackup = function() {
+    modalManager.performManualBackup();
+};
+
+window.clearBackupHistory = function() {
+    modalManager.clearBackupHistory();
+};
+
+window.triggerFileInput = function() {
+    modalManager.triggerFileInput();
 };
 
 // 应用主题

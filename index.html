@@ -26,6 +26,7 @@
                     <a href="#" onclick="openStatisticalAnalysisModal()">高级数据统计分析</a>
                     <a href="#" onclick="openHealthTrendModal()">健康趋势预测</a>
                     <a href="#" onclick="openCustomMetricsModal()">自定义指标</a>
+                    <a href="#" onclick="openBackupModal()">数据备份与恢复</a>
                     <a href="#" onclick="openThemeModal()">主题设置</a>
                 </div>
             </div>
@@ -503,6 +504,73 @@
                     <div id="customMetricsList" style="margin-top: 15px;">
                         <!-- 自定义指标列表将通过JavaScript动态生成 -->
                         <div style="text-align: center; color: #7f8c8d; padding: 40px;">暂无自定义指标</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 备份管理模态框 -->
+    <div id="backupModal" class="modal">
+        <div class="modal-content" style="width: 90%; max-width: 800px;">
+            <div class="modal-header">
+                <h3>数据备份与恢复</h3>
+                <button class="close-button" onclick="closeBackupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- 备份设置区域 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>备份设置</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="backupEnabled">启用定时备份</label>
+                            <input type="checkbox" id="backupEnabled" style="margin-top: 8px;">
+                        </div>
+                        <div style="display: flex; flex-direction: column;">
+                            <label for="backupFrequency">备份频率</label>
+                            <select id="backupFrequency" style="padding: 8px;">
+                                <option value="daily">每天</option>
+                                <option value="weekly">每周</option>
+                                <option value="monthly">每月</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: 1 / -1; margin-top: 10px;">
+                            <div id="lastBackupInfo" style="margin-bottom: 10px; color: #7f8c8d;">上次备份: 从未备份</div>
+                            <button onclick="saveBackupSettings()" style="padding: 10px 24px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">保存备份设置</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 手动备份区域 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>手动备份</h4>
+                    <div style="margin-top: 15px;">
+                        <button onclick="performManualBackup()" style="padding: 10px 24px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">立即备份数据</button>
+                        <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">点击按钮将生成备份文件并下载到本地</p>
+                    </div>
+                </div>
+                
+                <!-- 恢复数据区域 -->
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #e0e0e0;">
+                    <h4>恢复数据</h4>
+                    <div style="margin-top: 15px;">
+                        <label style="padding: 10px 24px; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer; display: inline-block;">
+                            选择备份文件
+                            <input type="file" id="backupFileInput" accept=".json" style="display: none;">
+                        </label>
+                        <p style="margin-top: 10px; color: #7f8c8d; font-size: 14px;">选择之前备份的JSON文件进行数据恢复</p>
+                    </div>
+                </div>
+                
+                <!-- 备份历史区域 -->
+                <div style="margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h4>备份历史</h4>
+                        <button onclick="clearBackupHistory()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">清理历史</button>
+                    </div>
+                    <div id="backupHistory" style="margin-top: 15px;">
+                        <!-- 备份历史记录将通过JavaScript动态生成 -->
+                        <p>暂无备份记录</p>
                     </div>
                 </div>
             </div>
